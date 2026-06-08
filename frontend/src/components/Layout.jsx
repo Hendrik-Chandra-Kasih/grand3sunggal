@@ -1,6 +1,6 @@
-import Header from './Header';
-import Footer from './Footer';
-import ChatButton from './ChatButton';
+import Header from './home/Header';
+import Footer from './home/Footer';
+import ChatButton from './home/ChatButton';
 
 function Layout({ children }) {
   return (

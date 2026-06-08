@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './Beranda.module.css';
+// import styles from './Berita.module.css';
 
 function Berita() {
   return (
