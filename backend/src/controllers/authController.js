@@ -1,102 +1,81 @@
-import pool from '../config/database.js'
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs';
+import { UserRepository } from '../repository/user/userRepository.js';
 
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  })
+const userRepository = new UserRepository();
 
 // POST /api/auth/register
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body
+    const { username, password, role } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required' })
+    if (!username || !password || !role) {
+      return res.status(400).json({ success: false, message: 'Username, password, and role are required' });
     }
 
-    const [existing] = await pool.execute(
-      'SELECT id FROM users WHERE email = ?',
-      [email]
-    )
-
-    if (existing.length > 0) {
-      return res.status(409).json({ success: false, message: 'Email already registered' })
+    const existing = await userRepository.findByUsername(username);
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Username already registered' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = await userRepository.create({
+      username,
+      password: hashedPassword,
+      role,
+    });
 
-    const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword]
-    )
-
-    const token = generateToken(result.insertId)
+    const token = await userRepository.authenticate(username, password, false);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
-      user: { id: result.insertId, name, email },
-    })
+      user: { id: user.id_user, username: user.username, role: user.role },
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 // POST /api/auth/login
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { username, password, rememberMe } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' })
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
 
-    const [users] = await pool.execute(
-      'SELECT * FROM users WHERE email = ?',
-      [email]
-    )
+    const token = await userRepository.authenticate(username, password, rememberMe);
 
-    if (users.length === 0) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' })
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const user = users[0]
-    const isMatch = await bcrypt.compare(password, user.password)
-
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' })
-    }
-
-    const token = generateToken(user.id)
+    const user = await userRepository.findByUsername(username);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email },
-    })
+      user: { id: user.id_user, username: user.username, role: user.role },
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
-    const [users] = await pool.execute(
-      'SELECT id, name, email, created_at FROM users WHERE id = ?',
-      [req.userId]
-    )
+    const user = await userRepository.findById(req.userId);
 
-    if (users.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    res.json({ success: true, user: users[0] })
+    res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};

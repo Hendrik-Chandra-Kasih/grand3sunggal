@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Memuat variabel lingkungan dari .env
+import 'dotenv/config';
 
 const config = {
   schema: 'prisma/schema.prisma',

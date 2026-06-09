@@ -133,3 +133,10 @@
 
 /* Remove schoolLogo as it's replaced by a placeholder div */
 
+.errorMessage {
+  color: #ef4444; /* Red color for error messages */
+  font-size: 0.875rem; /* body-sm */
+  margin-top: 12px; /* Spacing above the error message */
+  text-align: center; /* Center the error message */
+}
+

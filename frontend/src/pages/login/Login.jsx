@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import styles from './Login.module.css';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
@@ -6,12 +8,29 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Username:', username);
-    console.log('Password:', password);
+    setError(''); // Clear previous errors
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        username,
+        password,
+        rememberMe,
+      });
+
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/dashboard'); // Redirect to dashboard or desired page
+      }
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -56,7 +75,12 @@ const Login = () => {
 
           <div className={styles.optionsContainer}>
             <div className={styles.rememberMe}>
-              <input type="checkbox" id="rememberMe" />
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="rememberMe">Remember Me</label>
             </div>
             <a href="#" className={styles.forgotPassword}>
@@ -67,6 +91,8 @@ const Login = () => {
           <button type="submit" className={styles.loginButton}>
             Login
           </button>
+
+          {error && <p className={styles.errorMessage}>{error}</p>}
         </form>
       </div>
 
