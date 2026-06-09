@@ -33,16 +33,19 @@
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--color-surface-variant, #e1e2e4);
+  flex-wrap: wrap; /* Allow filters to wrap on smaller screens */
 }
 
 .filterGroup {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 150px; /* Ensure filter groups don't get too small */
 }
 
 .filterGroup.searchGroup {
   flex: 2;
+  min-width: 250px;
 }
 
 .filterGroup.selectGroup {
@@ -98,101 +101,76 @@
 }
 
 .input:focus, .select:focus {
-  outline: none;
   border-color: var(--color-primary, #00236f);
-  box-shadow: 0 0 0 2px var(--color-primary-fixed, #dce1ff);
+  box-shadow: 0 0 0 2px rgba(0, 35, 111, 0.2);
+  outline: none;
 }
 
-.searchButton {
-  padding: 0.75rem 1.5rem;
-  background-color: var(--color-secondary-container, #fea619);
-  color: var(--color-on-secondary-container, #684000);
-  border: none;
-  border-radius: 8px;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  height: 46px; /* Match input height */
-}
-
-.searchButton:hover {
-  background-color: var(--color-secondary, #855300);
-  color: var(--color-on-secondary, #ffffff);
-}
-
-.searchButton:active {
-  transform: scale(0.98);
-}
-
+/* Tutor Grid */
 .tutorGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-top: 1rem;
 }
 
 .tutorCard {
-  background-color: var(--color-surface-container-lowest, #ffffff);
+  background-color: var(--color-surface, #ffffff);
   border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  border: 1px solid var(--color-surface-variant, #e1e2e4);
-  transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s ease-in-out;
 }
 
 .tutorCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
 }
 
-.cardImageWrapper {
-  position: relative;
+.tutorImageContainer {
   width: 100%;
-  aspect-ratio: 1/1;
-  background-color: var(--color-surface-container, #edeef0);
+  padding-top: 100%; /* 1:1 Aspect Ratio */
+  position: relative;
+  background-color: var(--color-surface-container-low, #f3f4f6); /* Placeholder background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cardImage {
+.tutorImage {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.badge {
+.tutorPlaceholder {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  backdrop-filter: blur(4px);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-surface-container-low, #f3f4f6);
 }
 
-.badgeSMA {
-  background-color: rgba(30, 58, 138, 0.8); /* primary-container */
-  color: var(--color-inverse-primary, #b6c4ff);
+.tutorPlaceholder svg {
+  width: 40%; /* Adjust size of the person icon */
+  height: 40%;
+  color: var(--color-outline, #94A3B8);
 }
 
-.badgeSMPSMA {
-  background-color: rgba(30, 58, 138, 0.8);
-  color: var(--color-inverse-primary, #b6c4ff);
-}
+/* Removed badge styles */
 
-.badgeSD {
-  background-color: rgba(30, 58, 138, 0.8);
-  color: var(--color-inverse-primary, #b6c4ff);
-}
-
-.cardBody {
+.tutorInfo {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex-grow: 1; /* Allow info section to grow */
 }
 
 .tutorName {
@@ -203,135 +181,39 @@
 }
 
 .tutorSubject {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-secondary-container, #fea619);
-  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: var(--color-on-surface-variant, #444651);
+  margin-bottom: 0; /* Adjusted margin since footer is removed */
 }
 
-.divider {
-  height: 1px;
-  background-color: var(--color-surface-variant, #e1e2e4);
-  margin: auto 0 1rem 0;
-}
+/* Removed tutorFooter, rating, and profileLink styles */
 
-.cardFooter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.rating {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-on-surface, #191c1e);
-}
-
-.starIcon {
-  color: var(--color-secondary-container, #fea619);
-  font-size: 1rem;
-}
-
-.profileLink {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--color-primary, #00236f);
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.profileLink:hover {
-  color: var(--color-primary-container, #1e3a8a);
-}
-
-.profileLink:hover .arrowIcon {
-  transform: translateX(2px);
-}
-
-.arrowIcon {
-  transition: transform 0.2s;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
-}
-
-.pageButton {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--color-surface-variant, #e1e2e4);
-  background-color: var(--color-surface-container-lowest, #ffffff);
-  color: var(--color-on-surface, #191c1e);
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.pageButton:hover:not(.active) {
-  background-color: var(--color-surface-container-low, #f3f4f6);
-}
-
-.pageButton.active {
-  background-color: var(--color-primary, #00236f);
-  color: var(--color-on-primary, #ffffff);
-  border-color: var(--color-primary, #00236f);
-}
-
-@media (max-width: 1400px) {
-  .tutorGrid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-@media (max-width: 1200px) {
-  .tutorGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .tutorGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .tutorGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .filterBox {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filterGroup {
+    min-width: unset;
+    width: 100%;
   }
   .filterGroup.searchGroup {
-    flex: 100%;
+    min-width: unset;
+  }
+  .tutorGrid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 480px) {
-  .tutorGrid {
-    grid-template-columns: 1fr;
+  .container {
+    padding: 2rem 5%;
   }
-  .filterGroup.selectGroup {
-    flex: 100%;
+  .title {
+    font-size: 2rem;
   }
-  .searchButton {
-    width: 100%;
+  .tutorName {
+    font-size: 1.125rem;
   }
 }
