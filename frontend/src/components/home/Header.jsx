@@ -16,7 +16,7 @@ function Header() {
         <Link to="/tutor" className={location.pathname === '/tutor' ? styles.active : ''}>Tutor</Link>
         <Link to="/berita" className={location.pathname === '/berita' ? styles.active : ''}>Berita</Link>
       </nav>
-      <button className={styles.loginBtn}>Login</button>
+      <Link to="/login" className={styles.loginBtn}>Login</Link>
     </header>
   );
 }

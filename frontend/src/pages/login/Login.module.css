@@ -1,0 +1,135 @@
+.loginContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #e0f2f7; /* Light blue background from the image */
+  padding: 40px; /* Increased padding for overall layout */
+}
+
+.loginCard {
+  background-color: #ffffff; /* Level 1 (Cards/Widgets): Pure white */
+  border: 1px solid #e2e8f0; /* Level 1: subtle 1px border */
+  border-radius: 1rem; /* rounded-lg (1rem) for large containers */
+  box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.05); /* Level 1: soft, diffused shadow */
+  padding: 32px; /* Adjusted padding inside the card */
+  width: 100%;
+  max-width: 400px;
+  font-family: 'Inter', sans-serif; /* Inter typeface */
+}
+
+.brandName {
+  color: #ef4444; /* Red color from the image */
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 8px; /* 4px baseline grid */
+}
+
+.loginTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 16px; /* 4px baseline grid */
+}
+
+.welcomeMessage {
+  font-size: 1rem;
+  color: #64748b; /* Slate gray */
+  margin-bottom: 24px; /* lg gutter */
+}
+
+.formGroup {
+  margin-bottom: 16px; /* 4px baseline grid */
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 4px; /* 4px baseline grid */
+  font-weight: 600; /* semi-bold for labels */
+  color: #334155; /* Darker slate for labels */
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1; /* Slate-300 border */
+  border-radius: 8px; /* 8px rounded corners for input fields */
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: #3b82f6; /* Primary Blue ring on focus */
+  box-shadow: 0 0 0 2px #bfdbfe; /* 2px Primary Blue ring */
+}
+
+.passwordInputContainer {
+  position: relative;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #64748b; /* Slate gray */
+}
+
+.optionsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px; /* lg gutter */
+  font-size: 0.875rem; /* body-sm */
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+}
+
+.rememberMe input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.forgotPassword {
+  color: #3b82f6; /* Primary Blue */
+  text-decoration: none;
+}
+
+.forgotPassword:hover {
+  text-decoration: underline;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #2563eb; /* Darker blue from design system */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px; /* 8px rounded corners for buttons */
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.loginButton:hover {
+  background-color: #1e40af; /* Slightly darker blue on hover */
+}
+
+.imageContainer {
+  margin-left: 40px; /* Adjusted margin to match new padding */
+  width: 300px; /* Fixed width for placeholder */
+  height: 300px; /* Fixed height for placeholder */
+  background-color: #e2e8f0; /* Light gray placeholder */
+  border-radius: 1rem; /* Rounded corners for placeholder */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Remove schoolLogo as it's replaced by a placeholder div */
+
