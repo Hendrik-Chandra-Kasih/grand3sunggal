@@ -508,11 +508,11 @@ const DashboardAdmin = () => {
                           </td>
                           <td>
                             <div className={styles.iconGroup}>
-                              <MdVisibility
+                              {/* <MdVisibility
                                 className={`${styles.iconBtn} ${styles.iconPrimary}`}
                                 title="Lihat Detail"
                                 onClick={() => navigate(`/admin/pembayaran/${row.id_pembayaran}`)}
-                              />
+                              /> */}
                               <MdCheckCircle
                                 className={`${styles.iconBtn} ${styles.iconSuccess}`}
                                 title="Setujui"

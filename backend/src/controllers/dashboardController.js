@@ -255,7 +255,14 @@ export const getTransaksiPending = async (req, res) => {
 };
 
 // GET /api/dashboard/piutang
-// Siswa aktif yang belum memiliki pembayaran Verified untuk bulan berjalan
+// SPP jatuh tempo setiap tanggal SPP_DUE_DAY (default tanggal 10).
+// Hanya tampilkan piutang jika hari ini sudah melewati tanggal jatuh tempo,
+// dan siswa yang tanggal_masuk-nya sudah lebih dari 1 hari kalender dari
+// hari ini. Siswa dengan tanggal_masuk NULL (data lama) dan hari yang
+// sama dengan pendaftaran tidak ditampilkan agar kolom keterlambatan
+// tidak pernah menampilkan "0 Hari".
+const SPP_DUE_DAY = 10;
+
 export const getPiutangSiswa = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -263,7 +270,28 @@ export const getPiutangSiswa = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const now = new Date();
+    const today = startOfDay(now);
+    const dueDate = new Date(now.getFullYear(), now.getMonth(), SPP_DUE_DAY);
     const bulanIni = `${MONTHS_ID[now.getMonth()]} ${now.getFullYear()}`;
+
+    // Belum jatuh tempo → tidak ada piutang yang ditampilkan.
+    if (today < dueDate) {
+      return res.json({
+        success: true,
+        data: [],
+        meta: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 1,
+        },
+      });
+    }
+
+    // Filter: hanya siswa yang sudah terdaftar minimal 1 hari kalender.
+    // tanggal_masuk NULL (data lama) dan hari yang sama dengan pendaftaran
+    // dikecualikan supaya kolom keterlambatan tidak pernah "0 Hari".
+    const dateFilter = `s.tanggal_masuk IS NOT NULL AND s.tanggal_masuk < CURDATE()`;
 
     // Total piutang
     const totalRow = await queryOne(
@@ -274,6 +302,7 @@ export const getPiutangSiswa = async (req, res) => {
         AND p.status   = 'Verified'
         AND p.bulan    = ?
        WHERE s.status  = 'Aktif'
+         AND ${dateFilter}
          AND p.id_pembayaran IS NULL`,
       [bulanIni]
     );
@@ -286,28 +315,36 @@ export const getPiutangSiswa = async (req, res) => {
          s.id_siswa,
          s.nama,
          s.spp,
-         s.no_hp_ortu
+         s.no_hp_ortu,
+         s.tanggal_masuk
        FROM siswa s
        LEFT JOIN pembayaran p
          ON p.id_siswa = s.id_siswa
         AND p.status   = 'Verified'
         AND p.bulan    = ?
        WHERE s.status  = 'Aktif'
+         AND ${dateFilter}
          AND p.id_pembayaran IS NULL
        ORDER BY s.nama ASC
        LIMIT ${limit} OFFSET ${offset}`,
       [bulanIni]
     );
 
-    const keterlambatan = diffDays(now, new Date(now.getFullYear(), now.getMonth(), 10));
-    const data = rows.map((s) => ({
-      id: s.id_siswa,
-      nama: s.nama,
-      bulan: bulanIni,
-      nominal: formatRupiah(s.spp),
-      keterlambatan: `${keterlambatan} Hari`,
-      whatsapp: s.no_hp_ortu || '-',
-    }));
+    // diffDays menggunakan startOfDay → perbandingan calendar day,
+    // bukan selisih 24 jam dari jam saat ini.
+    const data = rows.map((s) => {
+      const keterlambatan = s.tanggal_masuk
+        ? diffDays(now, new Date(s.tanggal_masuk))
+        : 0;
+      return {
+        id: s.id_siswa,
+        nama: s.nama,
+        bulan: bulanIni,
+        nominal: formatRupiah(s.spp),
+        keterlambatan: `${keterlambatan} Hari`,
+        whatsapp: s.no_hp_ortu || '-',
+      };
+    });
 
     res.json({
       success: true,

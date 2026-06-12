@@ -7,6 +7,7 @@ import Tutor from './pages/home/Tutor'
 import Berita from './pages/home/Berita'
 import Login from './pages/login/Login'
 import DashboardAdmin from './pages/dashboard/admin/dashboard_admin'
+import PendaftaranSiswa from './pages/dashboard/admin/pendaftaran_siswa'
 import './App.css'
 
 function App() {
@@ -27,6 +28,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <DashboardAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/pendaftaran"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <PendaftaranSiswa />
             </ProtectedRoute>
           }
         />
