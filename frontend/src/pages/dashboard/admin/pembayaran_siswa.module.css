@@ -1,0 +1,703 @@
+/* =========================================================
+   Pembayaran Siswa — Admin
+   Design tokens follow the global design system
+   (Deep Academic Blue + Energetic Orange, Inter, 8px radius).
+   ========================================================= */
+.appShell {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  color: #191c1e;
+}
+
+/* =========================================================
+   Sidebar
+   ========================================================= */
+.sidebar {
+  width: 16rem;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  z-index: 40;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+
+.brandLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #1e3a8a;
+  color: #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.brandTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #00236f;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.brandSubtitle {
+  font-size: 0.75rem;
+  color: #757682;
+  margin: 0;
+  font-weight: 500;
+}
+
+.nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: #444651;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.navItem:hover {
+  background-color: #e1e2e4;
+}
+
+.navItemActive,
+.navItemActive:hover {
+  background-color: #fea619;
+  color: #653e00;
+  font-weight: 600;
+}
+
+.navIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItemLogout {
+  color: #ba1a1a;
+}
+.navItemLogout:hover {
+  background-color: #ffdad6;
+}
+
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-track { background: transparent; }
+.nav::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* =========================================================
+   Main
+   ========================================================= */
+.main {
+  margin-left: 16rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.topBar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.pageTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #00236f;
+  margin: 0;
+}
+
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.userInfo {
+  text-align: right;
+}
+
+.userName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+  color: #191c1e;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #757682;
+  margin: 0;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e1e2e4;
+  background-size: cover;
+  background-position: center;
+}
+
+/* =========================================================
+   Content
+   ========================================================= */
+.content {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.formTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #00236f;
+  margin: 0;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.formTitle::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 96px;
+  height: 3px;
+  background-color: #fea619;
+  border-radius: 2px;
+}
+
+/* =========================================================
+   Form grid (form + summary)
+   ========================================================= */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.summaryColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 88px;
+}
+
+/* =========================================================
+   Card
+   ========================================================= */
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e1e2e4;
+  background-color: #ffffff;
+}
+
+.cardTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #00236f;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardTitleIcon {
+  font-size: 1.2rem;
+  color: #00236f;
+}
+
+.cardBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* =========================================================
+   Fields
+   ========================================================= */
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .fieldRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #444651;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #191c1e;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.input:focus {
+  border-color: #00236f;
+  box-shadow: 0 0 0 2px rgba(0, 35, 111, 0.15);
+}
+
+.input[readonly] {
+  background-color: #f3f4f6;
+  color: #444651;
+  cursor: not-allowed;
+}
+
+/* Search input with icon */
+.searchWrap {
+  position: relative;
+  display: block;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #757682;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.searchWrap .input {
+  padding-left: 38px;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.08);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.dropdown::-webkit-scrollbar { width: 4px; }
+.dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.dropdownItem {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: #191c1e;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdownName {
+  font-weight: 600;
+}
+
+.dropdownMeta {
+  font-size: 0.75rem;
+  color: #757682;
+  font-weight: 500;
+}
+
+.dropdownHint {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #757682;
+  font-style: italic;
+  list-style: none;
+}
+
+/* =========================================================
+   Action row
+   ========================================================= */
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 4px;
+}
+
+.btnPrimary {
+  background-color: #00236f;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  min-width: 140px;
+}
+
+.btnPrimary:hover {
+  background-color: #001a55;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background-color: #ffffff;
+  color: #00236f;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btnSecondary:hover {
+  background-color: #f3f4f6;
+  border-color: #00236f;
+}
+
+.btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnIcon {
+  font-size: 1.05rem;
+}
+
+/* =========================================================
+   Summary card
+   ========================================================= */
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryHeader {
+  padding: 16px 24px;
+  border-bottom: 1px dashed #cbd5e1;
+  background-color: #ffffff;
+}
+
+.summaryTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #00236f;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.04em;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.summaryTitle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 3px;
+  background-color: #fea619;
+  border-radius: 2px;
+}
+
+.summaryBody {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summaryLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #191c1e;
+  flex: 1;
+}
+
+.summaryValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #191c1e;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.summaryMuted {
+  color: #94a3b8;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.summaryAccent {
+  color: #fea619;
+}
+
+.summaryDanger {
+  color: #ba1a1a;
+}
+
+.statusPending {
+  color: #fea619;
+  font-style: italic;
+}
+
+.summaryTotalWrap {
+  margin-top: 12px;
+  padding: 18px 20px;
+  border: 1px dashed #00236f;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  text-align: center;
+}
+
+.summaryTotalLabel {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #00236f;
+  margin: 0 0 6px;
+}
+
+.summaryTotalValue {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #00236f;
+  margin: 0;
+  line-height: 1.1;
+}
+
+/* =========================================================
+   Error / success banners
+   ========================================================= */
+.alertError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #ffdad6;
+  color: #93000a;
+  border: 1px solid #ba1a1a;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.alertClose {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+}
+
+.successCard {
+  background-color: #ecfdf5;
+  border: 1px solid #34d399;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.successHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.successIcon {
+  color: #047857;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.successTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #064e3b;
+  margin: 0 0 4px;
+}
+
+.successSubtitle {
+  font-size: 0.85rem;
+  color: #065f46;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.successClose {
+  background: none;
+  border: none;
+  color: #065f46;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+  margin-left: auto;
+}
+
+.btnRegisterAnother {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #00236f;
+  border: 1px solid #00236f;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btnRegisterAnother:hover {
+  background-color: #00236f;
+  color: #ffffff;
+}
