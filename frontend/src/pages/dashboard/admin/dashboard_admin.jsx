@@ -1,37 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate, NavLink, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  MdDashboard,
-  MdPersonAdd,
-  MdPayments,
-  MdSchool,
-  MdCalendarMonth,
-  MdHowToReg,
-  MdAssessment,
-  MdLogout,
   MdGroup,
   MdClass,
   MdEventBusy,
-  MdAccountBalanceWallet,
-  MdVisibility,
-  MdCheckCircle,
-  MdCancel,
   MdChevronLeft,
   MdChevronRight,
   MdRefresh,
 } from 'react-icons/md';
 import api from '../../../services/api';
+import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './dashboard_admin.module.css';
-
-const NAV_ITEMS = [
-  { label: 'Dashboard', icon: MdDashboard, to: '/admin/dashboard' },
-  { label: 'Pendaftaran Siswa', icon: MdPersonAdd, to: '/admin/pendaftaran' },
-  { label: 'Pembayaran Siswa', icon: MdPayments, to: '/admin/pembayaran' },
-  { label: 'Sistem Manajemen Guru', icon: MdSchool, to: '/admin/guru' },
-  { label: 'Jadwal', icon: MdCalendarMonth, to: '/admin/jadwal' },
-  { label: 'Rekap Absensi', icon: MdHowToReg, to: '/admin/absensi' },
-  { label: 'Laporan', icon: MdAssessment, to: '/admin/laporan' },
-];
 
 const STAT_META = [
   {
@@ -55,13 +34,6 @@ const STAT_META = [
     iconClass: 'iconDanger',
     borderAccent: 'borderError',
   },
-  {
-    key: 'transaksiMenungguVerifikasi',
-    label: 'Transaksi Menunggu Verifikasi',
-    icon: MdAccountBalanceWallet,
-    iconClass: 'iconTertiary',
-    borderAccent: 'borderSecondary',
-  },
 ];
 
 const formatNumber = (value) => {
@@ -75,41 +47,21 @@ const formatDisplayId = (value) => {
 };
 
 const DashboardAdmin = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     totalSiswaAktif: 0,
     totalKelasHariIni: 0,
     absensiBelumDikonfirmasi: 0,
-    transaksiMenungguVerifikasi: 0,
   });
   const [absensiHariIni, setAbsensiHariIni] = useState([]);
-  const [transaksiPending, setTransaksiPending] = useState([]);
   const [piutang, setPiutang] = useState([]);
   const [piutangMeta, setPiutangMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState({
     stats: true,
     absensi: true,
-    transaksi: true,
     piutang: true,
   });
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
-
-  // ─── Auth guard ─────────────────────────────────────────────
-  // Session & role checks are handled by <ProtectedRoute> in App.jsx,
-  // so by the time this component mounts the user is guaranteed to be
-  // an authenticated admin. We just hydrate the user profile here.
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
 
   // ─── Data fetchers ──────────────────────────────────────────
   const fetchStats = useCallback(async () => {
@@ -119,19 +71,17 @@ const DashboardAdmin = () => {
       if (res.data.success) {
         setStats(res.data.data.stats);
         setAbsensiHariIni(res.data.data.absensiHariIni || []);
-        setTransaksiPending(res.data.data.transaksiPending || []);
       }
     } catch (err) {
       console.error('Fetch stats error:', err);
       setError('Gagal memuat statistik dashboard');
     } finally {
-      // /stats mengembalikan absensiHariIni & transaksiPending,
-      // jadi kedua flag loading juga harus di-reset di sini
+      // /stats mengembalikan absensiHariIni,
+      // jadi flag loading absensi juga harus di-reset di sini
       setLoading((prev) => ({
         ...prev,
         stats: false,
         absensi: false,
-        transaksi: false,
       }));
     }
   }, []);
@@ -147,20 +97,6 @@ const DashboardAdmin = () => {
       console.error('Fetch absensi hari ini error:', err);
     } finally {
       setLoading((prev) => ({ ...prev, absensi: false }));
-    }
-  }, []);
-
-  const fetchTransaksiPending = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, transaksi: true }));
-    try {
-      const res = await api.get('/dashboard/transaksi-pending');
-      if (res.data.success) {
-        setTransaksiPending(res.data.data || []);
-      }
-    } catch (err) {
-      console.error('Fetch transaksi pending error:', err);
-    } finally {
-      setLoading((prev) => ({ ...prev, transaksi: false }));
     }
   }, []);
 
@@ -185,9 +121,8 @@ const DashboardAdmin = () => {
   }, [fetchStats, fetchPiutang, piutangMeta.page]);
 
   useEffect(() => {
-    if (!user) return;
     loadAll();
-  }, [user, loadAll]);
+  }, [loadAll]);
 
   // ─── CRUD Actions ───────────────────────────────────────────
   const handleConfirmAbsensi = async (idKelas) => {
@@ -218,38 +153,13 @@ const DashboardAdmin = () => {
     }
   };
 
-  const handleVerifyTransaksi = async (id, status) => {
-    setActionLoading((prev) => ({ ...prev, [`trx-${id}`]: true }));
-    try {
-      await api.patch(`/pembayaran/${id}/verify`, { status });
-      await fetchTransaksiPending();
-      await fetchStats();
-    } catch (err) {
-      console.error('Verify transaksi error:', err);
-      setError(`Gagal ${status === 'Verified' ? 'memverifikasi' : 'menolak'} transaksi`);
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [`trx-${id}`]: false }));
-    }
-  };
-
-  const handleVerifyAllTransaksi = async () => {
-    if (!window.confirm('Verifikasi semua transaksi pending?')) return;
-    setActionLoading((prev) => ({ ...prev, 'trx-all': true }));
-    try {
-      await api.patch('/pembayaran/bulk-verify', { status: 'Verified' });
-      await loadAll();
-    } catch (err) {
-      console.error('Verify all transaksi error:', err);
-      setError('Gagal memverifikasi semua transaksi');
-    } finally {
-      setActionLoading((prev) => ({ ...prev, 'trx-all': false }));
-    }
-  };
-
   const handleKirimTagihan = (row) => {
     const phone = (row.whatsapp || '').replace(/\D/g, '');
     const message = encodeURIComponent(
-      `Halo ${row.nama}, ini adalah pengingat pembayaran SPP untuk bulan ${row.bulan} sebesar ${row.nominal}. Mohon segera dilakukan pembayaran. Terima kasih.`
+      `Halo ${row.nama}, ini adalah pengingat pembayaran SPP. ` +
+      `Tunggakan Anda saat ini: ${row.tunggakan || '1 Bulan'} ` +
+      `dengan bulan tertunggak mulai ${row.bulan}. ` +
+      `Mohon segera dilakukan pembayaran. Terima kasih.`
     );
     if (phone) {
       window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
@@ -259,77 +169,14 @@ const DashboardAdmin = () => {
   };
 
   // ─── Handlers ───────────────────────────────────────────────
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login', { replace: true });
-  };
-
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > piutangMeta.totalPages) return;
     fetchPiutang(newPage);
   };
 
   return (
-    <div className={styles.appShell}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.brandLogo}>
-            <MdSchool style={{ fontVariationSettings: "'FILL' 1" }} />
-          </div>
-          <div>
-            <h2 className={styles.brandTitle}>GT Sunggal</h2>
-            <p className={styles.brandSubtitle}>Management System</p>
-          </div>
-        </div>
-
-        <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.label}
-                to={item.to}
-                className={({ isActive }) =>
-                  `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
-                }
-              >
-                <Icon className={styles.navIcon} data-icon={item.label.toLowerCase()} />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <button
-            type="button"
-            className={`${styles.navItem} ${styles.navItemLogout}`}
-            onClick={handleLogout}
-          >
-            <MdLogout className={styles.navIcon} />
-            <span>Keluar</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main wrapper */}
-      <main className={styles.main}>
-        {/* Header */}
-        <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>Administrator</h1>
-          <div className={styles.userBlock}>
-            <div className={styles.userInfo}>
-              <p className={styles.userName}>{user?.username || 'Admin Utama'}</p>
-              <p className={styles.userRole}>Super User</p>
-            </div>
-            <div className={styles.avatar} aria-label="User profile" />
-          </div>
-        </header>
-
-        {/* Content */}
-        <section className={styles.content}>
+    <AdminLayout>
+      {/* Content (sidebar + topbar di-handle oleh AdminLayout) */}
           {error && (
             <div className={styles.alertError} role="alert">
               {error}
@@ -376,7 +223,7 @@ const DashboardAdmin = () => {
                   <h3
                     className={`${styles.statValue} ${
                       stat.key === 'absensiBelumDikonfirmasi' ? styles.statValueDanger : ''
-                    } ${stat.key === 'transaksiMenungguVerifikasi' ? styles.statValueTertiary : ''}`}
+                    }`}
                   >
                     {loading.stats ? '…' : formatNumber(value)}
                   </h3>
@@ -385,152 +232,76 @@ const DashboardAdmin = () => {
             })}
           </div>
 
-          {/* Two-column tables */}
-          <div className={styles.twoColGrid}>
-            {/* Attendance today */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Absensi Hari ini</h2>
-                <button
-                  type="button"
-                  className={styles.btnPrimary}
-                  onClick={handleConfirmAllAbsensi}
-                  disabled={actionLoading['absensi-all'] || absensiHariIni.length === 0}
-                >
-                  {actionLoading['absensi-all'] ? 'Memproses…' : 'Konfirmasi Semua'}
-                </button>
-              </div>
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Kelas</th>
-                      <th>Tutor</th>
-                      <th>Hadir</th>
-                      <th>Absen</th>
-                      <th className={styles.thRight}>AKSI</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading.absensi ? (
-                      <tr>
-                        <td colSpan={5} className={styles.emptyCell}>Memuat data…</td>
-                      </tr>
-                    ) : absensiHariIni.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className={styles.emptyCell}>
-                          Belum ada data absensi hari ini
-                        </td>
-                      </tr>
-                    ) : (
-                      absensiHariIni.map((row) => (
-                        <tr key={row.id_kelas}>
-                          <td className={styles.tdBold}>{row.nama_kelas}</td>
-                          <td>{row.nama_tutor}</td>
-                          <td>
-                            <span className={`${styles.pill} ${styles.pillSuccess}`}>
-                              {formatDisplayId(row.hadir)}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`${styles.pill} ${styles.pillDanger}`}>
-                              {row.absen}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.actionGroup}>
-                              <button
-                                type="button"
-                                className={styles.btnSuccess}
-                                onClick={() => handleConfirmAbsensi(row.id_kelas)}
-                                disabled={actionLoading[`absensi-${row.id_kelas}`]}
-                              >
-                                Konfirmasi
-                              </button>
-                              <button type="button" className={styles.btnDanger}>
-                                Koreksi
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+          {/* Attendance today */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Absensi Hari ini</h2>
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={handleConfirmAllAbsensi}
+                disabled={actionLoading['absensi-all'] || absensiHariIni.length === 0}
+              >
+                {actionLoading['absensi-all'] ? 'Memproses…' : 'Konfirmasi Semua'}
+              </button>
             </div>
-
-            {/* Pending transactions */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Transaksi Menunggu Verifikasi</h2>
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  onClick={handleVerifyAllTransaksi}
-                  disabled={actionLoading['trx-all'] || transaksiPending.length === 0}
-                >
-                  {actionLoading['trx-all'] ? 'Memproses…' : 'Verifikasi Semua'}
-                </button>
-              </div>
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Kelas</th>
+                    <th>Tutor</th>
+                    <th>Hadir</th>
+                    <th>Absen</th>
+                    <th className={styles.thRight}>AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading.absensi ? (
                     <tr>
-                      <th>Tanggal</th>
-                      <th>Siswa</th>
-                      <th>Jumlah</th>
-                      <th>Status</th>
-                      <th>Aksi</th>
+                      <td colSpan={5} className={styles.emptyCell}>Memuat data…</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {loading.transaksi ? (
-                      <tr>
-                        <td colSpan={5} className={styles.emptyCell}>Memuat data…</td>
-                      </tr>
-                    ) : transaksiPending.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className={styles.emptyCell}>
-                          Tidak ada transaksi menunggu verifikasi
+                  ) : absensiHariIni.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className={styles.emptyCell}>
+                        Belum ada data absensi hari ini
+                      </td>
+                    </tr>
+                  ) : (
+                    absensiHariIni.map((row) => (
+                      <tr key={row.id_kelas}>
+                        <td className={styles.tdBold}>{row.nama_kelas}</td>
+                        <td>{row.nama_tutor}</td>
+                        <td>
+                          <span className={`${styles.pill} ${styles.pillSuccess}`}>
+                            {formatDisplayId(row.hadir)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`${styles.pill} ${styles.pillDanger}`}>
+                            {row.absen}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={styles.actionGroup}>
+                            <button
+                              type="button"
+                              className={styles.btnSuccess}
+                              onClick={() => handleConfirmAbsensi(row.id_kelas)}
+                              disabled={actionLoading[`absensi-${row.id_kelas}`]}
+                            >
+                              Konfirmasi
+                            </button>
+                            <button type="button" className={styles.btnDanger}>
+                              Koreksi
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ) : (
-                      transaksiPending.map((row) => (
-                        <tr key={row.id_pembayaran}>
-                          <td>{row.tanggal}</td>
-                          <td className={styles.tdBold}>{row.nama}</td>
-                          <td>{row.jumlah}</td>
-                          <td>
-                            <span className={`${styles.pill} ${styles.pillPending}`}>
-                              {row.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.iconGroup}>
-                              {/* <MdVisibility
-                                className={`${styles.iconBtn} ${styles.iconPrimary}`}
-                                title="Lihat Detail"
-                                onClick={() => navigate(`/admin/pembayaran/${row.id_pembayaran}`)}
-                              /> */}
-                              <MdCheckCircle
-                                className={`${styles.iconBtn} ${styles.iconSuccess}`}
-                                title="Setujui"
-                                onClick={() => handleVerifyTransaksi(row.id_pembayaran, 'Verified')}
-                              />
-                              <MdCancel
-                                className={`${styles.iconBtn} ${styles.iconDanger}`}
-                                title="Tolak"
-                                onClick={() => handleVerifyTransaksi(row.id_pembayaran, 'Rejected')}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -547,7 +318,8 @@ const DashboardAdmin = () => {
                   <tr>
                     <th>No</th>
                     <th>Nama Siswa</th>
-                    <th>Bulan Tagihan</th>
+                    <th>Bulan Terlama</th>
+                    <th>Tunggakan</th>
                     <th>Nominal</th>
                     <th>Keterlambatan</th>
                     <th>No Whatsapp</th>
@@ -557,11 +329,11 @@ const DashboardAdmin = () => {
                 <tbody>
                   {loading.piutang ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyCell}>Memuat data…</td>
+                      <td colSpan={8} className={styles.emptyCell}>Memuat data…</td>
                     </tr>
                   ) : piutang.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyCell}>
+                      <td colSpan={8} className={styles.emptyCell}>
                         Tidak ada piutang / tagihan jatuh tempo
                       </td>
                     </tr>
@@ -571,6 +343,11 @@ const DashboardAdmin = () => {
                         <td>{(piutangMeta.page - 1) * piutangMeta.limit + idx + 1}</td>
                         <td className={styles.tdBold}>{row.nama}</td>
                         <td>{row.bulan}</td>
+                        <td>
+                          <span className={`${styles.pill} ${styles.pillPending}`}>
+                            {row.tunggakan}
+                          </span>
+                        </td>
                         <td>{row.nominal}</td>
                         <td className={styles.tdDangerUnderline}>{row.keterlambatan}</td>
                         <td>
@@ -626,8 +403,6 @@ const DashboardAdmin = () => {
               </div>
             </div>
           </div>
-        </section>
-
         {/* Footer */}
         <footer className={styles.footer}>
           <div className={styles.footerLeft}>
@@ -651,8 +426,7 @@ const DashboardAdmin = () => {
             </Link>
           </div>
         </footer>
-      </main>
-    </div>
+    </AdminLayout>
   );
 };
 

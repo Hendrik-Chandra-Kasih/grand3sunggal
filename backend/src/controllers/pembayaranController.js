@@ -3,6 +3,11 @@ import { query } from '../config/query.js';
 
 const pembayaranRepository = new PembayaranRepository();
 
+const MONTHS_ID = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
 const handleError = (res, error) => {
   console.error('❌ PembayaranController error:', error);
   res.status(500).json({ success: false, message: error.message });
@@ -34,6 +39,119 @@ export const getPembayaranById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Pembayaran tidak ditemukan' });
     }
     res.json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// GET /api/pembayaran/tunggakan/:id_siswa
+// Menghitung tunggakan SPP untuk satu siswa: list bulan dari
+// (tanggal_masuk + 1 bulan) sampai bulan sekarang yang belum
+// dibayar berstatus 'Verified'. Tiap bulan menyertakan
+// 'tanggal_bayar' yang sudah di-clamp ke hari valid.
+export const getTunggakanSiswa = async (req, res) => {
+  try {
+    const id_siswa = parseInt(req.params.id_siswa, 10);
+    if (!id_siswa) {
+      return res.status(400).json({ success: false, message: 'id_siswa wajib diisi' });
+    }
+
+    const siswaRows = await query(
+      `SELECT id_siswa, nama, spp, tanggal_masuk
+       FROM siswa
+       WHERE id_siswa = ?
+         AND status = 'Aktif'
+       LIMIT 1`,
+      [id_siswa]
+    );
+
+    if (siswaRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Siswa tidak ditemukan / tidak aktif' });
+    }
+
+    const s = siswaRows[0];
+    const spp = Number(s.spp) || 0;
+
+    if (!s.tanggal_masuk) {
+      return res.json({
+        success: true,
+        data: {
+          id_siswa: s.id_siswa,
+          nama: s.nama,
+          spp,
+          tunggakan_count: 0,
+          tunggakan_months: [],
+        },
+      });
+    }
+
+    // Parse tanggal_masuk (DATE bisa datang sebagai Date atau 'YYYY-MM-DD')
+    const tglMasuk = s.tanggal_masuk instanceof Date
+      ? new Date(
+          s.tanggal_masuk.getFullYear(),
+          s.tanggal_masuk.getMonth(),
+          s.tanggal_masuk.getDate()
+        )
+      : (() => {
+          const [y, m, d] = String(s.tanggal_masuk).split('-').map(Number);
+          return new Date(y, m - 1, d);
+        })();
+
+    // Periode yang sudah dibayar ditentukan dari `tanggal_verifikasi`
+    // (bukan `bulan` lagi) — `tanggal_verifikasi` merepresentasikan
+    // due-date periode yang dilunasi setelah perubahan semantic field.
+    const pembayaranList = await query(
+      `SELECT tanggal_verifikasi FROM pembayaran
+       WHERE id_siswa = ? AND status = 'Verified'
+         AND tanggal_verifikasi IS NOT NULL`,
+      [id_siswa]
+    );
+    const paidSet = new Set();
+    for (const p of pembayaranList) {
+      const tv = p.tanggal_verifikasi instanceof Date
+        ? p.tanggal_verifikasi
+        : new Date(p.tanggal_verifikasi);
+      if (Number.isNaN(tv.getTime())) continue;
+      paidSet.add(`${MONTHS_ID[tv.getMonth()]} ${tv.getFullYear()}`);
+    }
+
+    const now = new Date();
+    const dayOfMonth = tglMasuk.getDate();
+    const tunggakanMonths = [];
+
+    let cursor = new Date(tglMasuk.getFullYear(), tglMasuk.getMonth() + 1, 1);
+    const endMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    while (cursor.getTime() <= endMonth.getTime()) {
+      const bulanStr = `${MONTHS_ID[cursor.getMonth()]} ${cursor.getFullYear()}`;
+      if (!paidSet.has(bulanStr)) {
+        // tanggal_bayar: hari yg sama dengan tanggal_masuk, di-clamp ke akhir bulan
+        const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+        const clampedDay = Math.min(Math.max(dayOfMonth, 1), daysInMonth);
+        const periodDate = new Date(cursor.getFullYear(), cursor.getMonth(), clampedDay);
+        const y = periodDate.getFullYear();
+        const mm = String(periodDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(periodDate.getDate()).padStart(2, '0');
+        tunggakanMonths.push({
+          bulan: bulanStr,
+          tanggal_bayar: `${y}-${mm}-${dd}`,
+          year: cursor.getFullYear(),
+          monthIdx: cursor.getMonth(),
+        });
+      }
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id_siswa: s.id_siswa,
+        nama: s.nama,
+        spp,
+        tunggakan_count: tunggakanMonths.length,
+        tunggakan_months: tunggakanMonths,
+      },
+    });
   } catch (error) {
     handleError(res, error);
   }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAllPembayaran,
   getPembayaranById,
+  getTunggakanSiswa,
   createPembayaran,
   updatePembayaran,
   verifyPembayaran,
@@ -13,6 +14,7 @@ const router = Router();
 
 // Static route harus lebih dulu
 router.patch('/bulk-verify', bulkVerify);
+router.get('/tunggakan/:id_siswa', getTunggakanSiswa);
 
 router.get('/', getAllPembayaran);
 router.get('/:id', getPembayaranById);

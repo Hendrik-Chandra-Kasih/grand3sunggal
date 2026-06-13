@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
 import {
-  MdDashboard,
-  MdPersonAdd,
-  MdPayments,
-  MdSchool,
-  MdCalendarMonth,
-  MdHowToReg,
-  MdAssessment,
-  MdLogout,
   MdPerson,
   MdPeople,
   MdToday,
@@ -18,17 +9,8 @@ import {
   MdRefresh,
 } from 'react-icons/md';
 import api from '../../../services/api';
+import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './pendaftaran_siswa.module.css';
-
-const NAV_ITEMS = [
-  { label: 'Dashboard', icon: MdDashboard, to: '/admin/dashboard' },
-  { label: 'Pendaftaran Siswa', icon: MdPersonAdd, to: '/admin/pendaftaran' },
-  { label: 'Pembayaran Siswa', icon: MdPayments, to: '/admin/pembayaran' },
-  { label: 'Sistem Manajemen Guru', icon: MdSchool, to: '/admin/guru' },
-  { label: 'Jadwal', icon: MdCalendarMonth, to: '/admin/jadwal' },
-  { label: 'Rekap Absensi', icon: MdHowToReg, to: '/admin/absensi' },
-  { label: 'Laporan', icon: MdAssessment, to: '/admin/laporan' },
-];
 
 const KELAS_OPTIONS = [
   'Calistung',
@@ -190,8 +172,6 @@ const INITIAL_FORM = {
 };
 
 const PendaftaranSiswa = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
 
   const [biaya, setBiaya] = useState({
@@ -206,29 +186,12 @@ const PendaftaranSiswa = () => {
   const [submitResult, setSubmitResult] = useState(null); // { siswa, credentials, whatsappLink, message }
   const [copiedField, setCopiedField] = useState(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
-
   const totalTagihan = useMemo(() => {
     const spp = parseNumericInput(biaya.sppBulanan);
     const modul = parseNumericInput(biaya.modulBuku);
     const diskon = parseNumericInput(biaya.diskonPromo);
     return BIAYA_PENDAFTARAN + spp + modul - diskon;
   }, [biaya]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login', { replace: true });
-  };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -387,7 +350,7 @@ const PendaftaranSiswa = () => {
 
       // 3) Simpan data pembayaran awal (Pendaftaran)
       // Catatan: backend menggunakan satu kolom jenis_pembayaran.
-      // Kita simpan sebagai 'Pendaftaran' dulu (sesuai total tagihan awal).
+      // Pembayaran yang langsung dilakukan saat pendaftaran otomatis berstatus 'Verified'.
       const pembayaranPayload = {
         id_siswa: idSiswa,
         bulan: buildBulanTagihan(today),
@@ -396,7 +359,8 @@ const PendaftaranSiswa = () => {
         jumlah: totalTagihanLocal,
         metode_pembayaran: 'Tunai',
         diskon: diskonNumeric,
-        status: 'Pending',
+        status: 'Verified',
+        tanggal_verifikasi: today.toISOString(),
         catatan: modulNumeric > 0
           ? `Termasuk Modul & Buku: Rp ${modulNumeric.toLocaleString('en-US')}`
           : null,
@@ -438,70 +402,15 @@ const PendaftaranSiswa = () => {
   const today = new Date();
 
   return (
-    <div className={styles.appShell}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.brandLogo}>
-            <MdSchool style={{ fontVariationSettings: "'FILL' 1" }} />
-          </div>
-          <div>
-            <h2 className={styles.brandTitle}>GT Sunggal</h2>
-            <p className={styles.brandSubtitle}>Management System</p>
-          </div>
+    <AdminLayout>
+      {/* Content (sidebar + topbar di-handle oleh AdminLayout) */}
+      {/* Page heading row */}
+      <div className={styles.pageHeader}>
+        <h2 className={styles.formTitle}>FORMULIR PENDAFTARAN SISWA</h2>
+        <div className={styles.dateBadge}>
+          <MdToday className={styles.dateIcon} />
+          <span>{formatTanggalLengkap(today)}</span>
         </div>
-
-        <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.label}
-                to={item.to}
-                className={({ isActive }) =>
-                  `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
-                }
-              >
-                <Icon className={styles.navIcon} />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <button
-            type="button"
-            className={`${styles.navItem} ${styles.navItemLogout}`}
-            onClick={handleLogout}
-          >
-            <MdLogout className={styles.navIcon} />
-            <span>Keluar</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className={styles.main}>
-        <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>Administrator</h1>
-          <div className={styles.userBlock}>
-            <div className={styles.userInfo}>
-              <p className={styles.userName}>{user?.username || 'Admin Utama'}</p>
-              <p className={styles.userRole}>Super User</p>
-            </div>
-            <div className={styles.avatar} aria-label="User profile" />
-          </div>
-        </header>
-
-        <section className={styles.content}>
-          {/* Page heading row */}
-          <div className={styles.pageHeader}>
-            <h2 className={styles.formTitle}>FORMULIR PENDAFTARAN SISWA</h2>
-            <div className={styles.dateBadge}>
-              <MdToday className={styles.dateIcon} />
-              <span>{formatTanggalLengkap(today)}</span>
-            </div>
           </div>
 
           {submitError && (
@@ -980,9 +889,7 @@ const PendaftaranSiswa = () => {
               </section>
             </aside>
           </form>
-        </section>
-      </main>
-    </div>
+    </AdminLayout>
   );
 };
 

@@ -1,31 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
 import {
-  MdDashboard,
-  MdPersonAdd,
-  MdPayments,
-  MdSchool,
-  MdCalendarMonth,
-  MdHowToReg,
-  MdAssessment,
-  MdLogout,
   MdSearch,
   MdCheckCircle,
   MdRefresh,
   MdInfo,
+  MdWarning,
 } from 'react-icons/md';
 import api from '../../../services/api';
+import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './pembayaran_siswa.module.css';
-
-const NAV_ITEMS = [
-  { label: 'Dashboard', icon: MdDashboard, to: '/admin/dashboard' },
-  { label: 'Pendaftaran Siswa', icon: MdPersonAdd, to: '/admin/pendaftaran' },
-  { label: 'Pembayaran Siswa', icon: MdPayments, to: '/admin/pembayaran' },
-  { label: 'Sistem Manajemen Guru', icon: MdSchool, to: '/admin/guru' },
-  { label: 'Jadwal', icon: MdCalendarMonth, to: '/admin/jadwal' },
-  { label: 'Rekap Absensi', icon: MdHowToReg, to: '/admin/absensi' },
-  { label: 'Laporan', icon: MdAssessment, to: '/admin/laporan' },
-];
 
 const JENIS_PEMBAYARAN_OPTIONS = [
   { value: 'SPP', label: 'SPP Bulanan' },
@@ -59,12 +42,21 @@ const buildKuitansiId = (id) => {
   return `KWT/${year}/${String(id).padStart(3, '0')}`;
 };
 
+const MONTHS_ID = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
 const buildBulanTagihan = (date = new Date()) => {
-  const BULAN_INDONESIA = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-  ];
-  return `${BULAN_INDONESIA[date.getMonth()]} ${date.getFullYear()}`;
+  return `${MONTHS_ID[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const formatISODate = (date) => {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 };
 
 const INITIAL_FORM = {
@@ -78,8 +70,6 @@ const INITIAL_FORM = {
 };
 
 const PembayaranSiswa = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -88,20 +78,15 @@ const PembayaranSiswa = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitResult, setSubmitResult] = useState(null);
+  const [tunggakan, setTunggakan] = useState({
+    loading: false,
+    months: [], // [{ bulan, tanggal_bayar, year, monthIdx }, ...]
+    error: null,
+  });
+  const [paymentMode, setPaymentMode] = useState('all'); // 'all' | 'single'
+  const [selectedPeriodIdx, setSelectedPeriodIdx] = useState(null);
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
-
-  // ─── Auth & user ─────────────────────────────────────────────
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
-  }, []);
 
   // Tutup dropdown ketika klik di luar
   useEffect(() => {
@@ -159,11 +144,45 @@ const PembayaranSiswa = () => {
     return () => clearTimeout(timer);
   }, [form.search, form.selectedSiswa]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login', { replace: true });
-  };
+  // ─── Hitung tunggakan SPP (bulan yang belum dibayar & Verified) ───
+  useEffect(() => {
+    const siswa = form.selectedSiswa;
+    if (!siswa || form.jenisPembayaran !== 'SPP') {
+      setTunggakan({ loading: false, months: [], error: null });
+      setSelectedPeriodIdx(null);
+      return;
+    }
+
+    let cancelled = false;
+    setTunggakan({ loading: true, months: [], error: null });
+
+    (async () => {
+      try {
+        const response = await api.get(`/pembayaran/tunggakan/${siswa.id_siswa}`);
+        if (cancelled) return;
+        const data = response.data?.data;
+        const months = Array.isArray(data?.tunggakan_months) ? data.tunggakan_months : [];
+        setTunggakan({ loading: false, months, error: null });
+        setSelectedPeriodIdx((prev) =>
+          prev !== null && prev < months.length ? prev : months.length > 0 ? 0 : null
+        );
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Fetch tunggakan error:', err);
+        const apiMessage =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          'Gagal memuat data tunggakan siswa.';
+        setTunggakan({ loading: false, months: [], error: apiMessage });
+        setSelectedPeriodIdx(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.selectedSiswa, form.jenisPembayaran]);
 
   const handleSearchChange = (event) => {
     const value = event.target.value;
@@ -226,6 +245,9 @@ const PembayaranSiswa = () => {
     setSearchError(null);
     setSearchResults([]);
     setShowDropdown(false);
+    setTunggakan({ loading: false, months: [], error: null });
+    setPaymentMode('all');
+    setSelectedPeriodIdx(null);
   };
 
   const handleSubmit = async (event) => {
@@ -244,27 +266,108 @@ const PembayaranSiswa = () => {
       setSubmitError('Pilih metode pembayaran.');
       return;
     }
-    if (jumlahNumeric <= 0) {
-      setSubmitError('Jumlah uang dibayar harus lebih dari 0.');
-      return;
-    }
+
+    const isTunggakanFlow =
+      form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1;
+    const today = new Date();
+    const tanggalVerifikasi = formatISODate(today);
 
     setSubmitting(true);
-    const today = new Date();
-
-    const payload = {
-      id_siswa: form.selectedSiswa.id_siswa,
-      bulan: buildBulanTagihan(today),
-      tanggal_bayar: today.toISOString().slice(0, 10),
-      jenis_pembayaran: form.jenisPembayaran,
-      jumlah: jumlahNumeric,
-      metode_pembayaran: form.metodePembayaran,
-      diskon: 0,
-      status: 'Pending',
-      catatan: null,
-    };
 
     try {
+      // ── Flow tunggakan (> 2 bulan) ───────────────────────────
+      if (isTunggakanFlow) {
+        const spp = Number(form.selectedSiswa.spp) || 0;
+        let periodsToPay = [];
+
+        if (paymentMode === 'all') {
+          periodsToPay = tunggakan.months;
+        } else {
+          if (
+            selectedPeriodIdx === null ||
+            selectedPeriodIdx < 0 ||
+            selectedPeriodIdx >= tunggakan.months.length
+          ) {
+            setSubmitting(false);
+            setSubmitError('Pilih periode tunggakan yang ingin dibayar.');
+            return;
+          }
+          if (selectedPeriodIdx > 0) {
+            setSubmitting(false);
+            setSubmitError(
+              `Pembayaran harus berurutan. Silakan bayar tunggakan bulan ${tunggakan.months[0].bulan} terlebih dahulu.`
+            );
+            return;
+          }
+          periodsToPay = [tunggakan.months[selectedPeriodIdx]];
+        }
+
+        if (periodsToPay.length === 0) {
+          setSubmitting(false);
+          setSubmitError('Tidak ada tunggakan untuk dibayar.');
+          return;
+        }
+
+        const createdIds = [];
+        for (const p of periodsToPay) {
+          const payload = {
+            id_siswa: form.selectedSiswa.id_siswa,
+            bulan: p.bulan,
+            // Switched: tanggal_bayar = kapan transaksi dilakukan (hari ini),
+            // tanggal_verifikasi = periode tunggakan yang dibayar (bulan sebelumnya)
+            tanggal_bayar: formatISODate(today),
+            jenis_pembayaran: 'SPP',
+            jumlah: spp,
+            metode_pembayaran: form.metodePembayaran,
+            diskon: 0,
+            status: 'Verified',
+            tanggal_verifikasi: p.tanggal_bayar,
+            catatan: `Pembayaran tunggakan (${paymentMode === 'all' ? 'bulk' : '1 periode'})`,
+          };
+          // eslint-disable-next-line no-await-in-loop
+          const res = await api.post('/pembayaran', payload);
+          const created = res.data?.data;
+          if (created?.id_pembayaran) createdIds.push(created.id_pembayaran);
+        }
+
+        const firstId = createdIds[0];
+        setSubmitResult({
+          siswa: form.selectedSiswa,
+          kuitansiId: buildKuitansiId(firstId),
+          jumlahKuitansi: createdIds.length,
+          jenis: 'SPP',
+          metode: form.metodePembayaran,
+          jumlah: spp * periodsToPay.length,
+          kembalian: 0,
+          total: spp * periodsToPay.length,
+          isTunggakan: true,
+          periodeCount: periodsToPay.length,
+        });
+        handleReset();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // ── Flow normal (non-tunggakan) ──────────────────────────
+      if (jumlahNumeric <= 0) {
+        setSubmitError('Jumlah uang dibayar harus lebih dari 0.');
+        setSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        id_siswa: form.selectedSiswa.id_siswa,
+        bulan: buildBulanTagihan(today),
+        tanggal_bayar: formatISODate(today),
+        jenis_pembayaran: form.jenisPembayaran,
+        jumlah: jumlahNumeric,
+        metode_pembayaran: form.metodePembayaran,
+        diskon: 0,
+        status: 'Verified',
+        tanggal_verifikasi: tanggalVerifikasi,
+        catatan: null,
+      };
+
       const response = await api.post('/pembayaran', payload);
       const created = response.data?.data;
       setSubmitResult({
@@ -292,66 +395,11 @@ const PembayaranSiswa = () => {
   };
 
   return (
-    <div className={styles.appShell}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.brandLogo}>
-            <MdSchool style={{ fontVariationSettings: "'FILL' 1" }} />
-          </div>
-          <div>
-            <h2 className={styles.brandTitle}>GT Sunggal</h2>
-            <p className={styles.brandSubtitle}>Management System</p>
-          </div>
-        </div>
-
-        <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.label}
-                to={item.to}
-                className={({ isActive }) =>
-                  `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
-                }
-              >
-                <Icon className={styles.navIcon} />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <button
-            type="button"
-            className={`${styles.navItem} ${styles.navItemLogout}`}
-            onClick={handleLogout}
-          >
-            <MdLogout className={styles.navIcon} />
-            <span>Keluar</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className={styles.main}>
-        <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>Administrator</h1>
-          <div className={styles.userBlock}>
-            <div className={styles.userInfo}>
-              <p className={styles.userName}>{user?.username || 'Admin Utama'}</p>
-              <p className={styles.userRole}>Super User</p>
-            </div>
-            <div className={styles.avatar} aria-label="User profile" />
-          </div>
-        </header>
-
-        <section className={styles.content}>
-          <div className={styles.pageHeader}>
-            <h2 className={styles.formTitle}>PEMBAYARAN SISWA</h2>
-          </div>
+    <AdminLayout>
+      {/* Content (sidebar + topbar di-handle oleh AdminLayout) */}
+      <div className={styles.pageHeader}>
+        <h2 className={styles.formTitle}>PEMBAYARAN SISWA</h2>
+      </div>
 
           {submitError && (
             <div className={styles.alertError} role="alert">
@@ -377,8 +425,11 @@ const PembayaranSiswa = () => {
                   <h3 className={styles.successTitle}>Pembayaran Tersimpan</h3>
                   <p className={styles.successSubtitle}>
                     Pembayaran atas nama <strong>{submitResult.siswa.nama}</strong> berhasil
-                    dicatat dengan nomor kuitansi <strong>{submitResult.kuitansiId}</strong>.
-                    Transaksi berstatus <em>Pending</em> menunggu verifikasi.
+                    dicatat dengan nomor kuitansi <strong>{submitResult.kuitansiId}</strong>
+                    {submitResult.isTunggakan && submitResult.periodeCount > 1
+                      ? ` (${submitResult.periodeCount} kuitansi)`
+                      : ''}
+                    . Transaksi langsung berstatus <em>Terverifikasi</em>.
                   </p>
                 </div>
                 <button
@@ -533,22 +584,132 @@ const PembayaranSiswa = () => {
                     </div>
                   </div>
 
-                  {/* 6. Jumlah Uang Dibayar */}
-                  <div className={styles.field}>
-                    <label className={styles.label} htmlFor="jumlahDibayar">
-                      Jumlah Uang Dibayar (Rp)
-                    </label>
-                    <input
-                      id="jumlahDibayar"
-                      name="jumlahDibayar"
-                      type="text"
-                      inputMode="numeric"
-                      className={styles.input}
-                      placeholder="Masukkan jumlah uang…"
-                      value={form.jumlahDibayar}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                  {/* Tunggakan info (hanya untuk SPP) */}
+                  {form.jenisPembayaran === 'SPP' && form.selectedSiswa && (
+                    <>
+                      {tunggakan.loading && (
+                        <div className={styles.tunggakanHint}>
+                          Memeriksa tunggakan siswa…
+                        </div>
+                      )}
+
+                      {tunggakan.error && (
+                        <div className={styles.tunggakanHint}>
+                          {tunggakan.error}
+                        </div>
+                      )}
+
+                      {!tunggakan.loading && !tunggakan.error && tunggakan.months.length > 1 && (
+                        <>
+                          <div className={styles.tunggakanAlert} role="alert">
+                            <div className={styles.tunggakanAlertIcon}>
+                              <MdWarning />
+                            </div>
+                            <div className={styles.tunggakanAlertBody}>
+                              <strong className={styles.tunggakanAlertTitle}>
+                                Tunggakan {tunggakan.months.length} Bulan
+                              </strong>
+                              <span className={styles.tunggakanAlertText}>
+                                Siswa ini memiliki tunggakan lebih dari 1 bulan dan
+                                harus dibayar terlebih dahulu sebelum transaksi baru.
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className={styles.fieldRow}>
+                            <div className={styles.field}>
+                              <label className={styles.label} htmlFor="paymentMode">
+                                Mode Pembayaran Tunggakan
+                              </label>
+                              <select
+                                id="paymentMode"
+                                name="paymentMode"
+                                className={styles.input}
+                                value={paymentMode}
+                                onChange={(e) => setPaymentMode(e.target.value)}
+                              >
+                                <option value="all">
+                                  Bayar semua ({tunggakan.months.length} bulan)
+                                </option>
+                                <option value="single">
+                                  Bayar satu per satu
+                                </option>
+                              </select>
+                            </div>
+
+                            {paymentMode === 'single' && (
+                              <div className={styles.field}>
+                                <label className={styles.label} htmlFor="selectedPeriod">
+                                  Pilih Periode
+                                </label>
+                                <select
+                                  id="selectedPeriod"
+                                  name="selectedPeriod"
+                                  className={styles.input}
+                                  value={
+                                    selectedPeriodIdx !== null
+                                      ? String(selectedPeriodIdx)
+                                      : ''
+                                  }
+                                  onChange={(e) =>
+                                    setSelectedPeriodIdx(
+                                      e.target.value === ''
+                                        ? null
+                                        : parseInt(e.target.value, 10)
+                                    )
+                                  }
+                                >
+                                  {tunggakan.months.map((m, idx) => (
+                                    <option
+                                      key={`${m.year}-${m.monthIdx}`}
+                                      value={idx}
+                                      disabled={idx > 0}
+                                    >
+                                      {m.bulan} {idx > 0 ? '(Harus bayar bulan sebelumnya dulu)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {!tunggakan.loading && !tunggakan.error && tunggakan.months.length > 0 && tunggakan.months.length <= 1 && (
+                        <div className={styles.tunggakanHint}>
+                          Tunggakan saat ini: {tunggakan.months.length} bulan
+                          ({tunggakan.months.map((m) => m.bulan).join(', ')}).
+                          Pembayaran tetap dapat dilakukan untuk periode berjalan.
+                        </div>
+                      )}
+
+                      {!tunggakan.loading && !tunggakan.error && tunggakan.months.length === 0 && (
+                        <div className={styles.tunggakanHint}>
+                          Tidak ada tunggakan. Siswa sudah membayar semua tagihan SPP
+                          (atau tanggal masuk belum diinput).
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* 6. Jumlah Uang Dibayar — disembunyikan saat flow tunggakan */}
+                  {!(form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1) && (
+                    <div className={styles.field}>
+                      <label className={styles.label} htmlFor="jumlahDibayar">
+                        Jumlah Uang Dibayar (Rp)
+                      </label>
+                      <input
+                        id="jumlahDibayar"
+                        name="jumlahDibayar"
+                        type="text"
+                        inputMode="numeric"
+                        className={styles.input}
+                        placeholder="Masukkan jumlah uang…"
+                        value={form.jumlahDibayar}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  )}
 
                   {/* 7 & 8. Tombol Simpan & Reset */}
                   <div className={styles.actionRow}>
@@ -557,7 +718,13 @@ const PembayaranSiswa = () => {
                       className={styles.btnPrimary}
                       disabled={submitting}
                     >
-                      {submitting ? 'Menyimpan…' : 'Simpan Transaksi'}
+                      {submitting
+                        ? 'Menyimpan…'
+                        : form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1
+                        ? paymentMode === 'all'
+                          ? `Bayar Semua Tunggakan (${tunggakan.months.length})`
+                          : 'Bayar Periode Terpilih'
+                        : 'Simpan Transaksi'}
                     </button>
                     <button
                       type="button"
@@ -591,10 +758,10 @@ const PembayaranSiswa = () => {
                     <span className={styles.summaryLabel}>Status:</span>
                     <span
                       className={`${styles.summaryValue} ${
-                        submitResult ? styles.statusPending : styles.summaryMuted
+                        submitResult ? styles.statusVerified : styles.summaryMuted
                       }`}
                     >
-                      {submitResult ? 'Menunggu Verifikasi' : 'Belum Disimpan'}
+                      {submitResult ? 'Terverifikasi' : 'Belum Disimpan'}
                     </span>
                   </div>
                   <div className={styles.summaryRow}>
@@ -621,49 +788,90 @@ const PembayaranSiswa = () => {
                         : '-'}
                     </span>
                   </div>
-                  <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>Uang Bayar:</span>
-                    <span
-                      className={`${styles.summaryValue} ${
-                        jumlahNumeric > 0 ? '' : styles.summaryMuted
-                      }`}
-                    >
-                      {formatRupiah(jumlahNumeric)}
-                    </span>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>Kembalian:</span>
-                    <span
-                      className={`${styles.summaryValue} ${
-                        kembalian > 0 ? styles.summaryAccent : styles.summaryMuted
-                      }`}
-                    >
-                      {formatRupiah(kembalian)}
-                    </span>
-                  </div>
 
-                  {kurangBayar > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span className={styles.summaryLabel}>Kurang:</span>
-                      <span className={`${styles.summaryValue} ${styles.summaryDanger}`}>
-                        {formatRupiah(kurangBayar)}
-                      </span>
-                    </div>
+                  {form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1 && (
+                    <>
+                      <div className={styles.summaryRow}>
+                        <span className={styles.summaryLabel}>Tunggakan:</span>
+                        <span className={`${styles.summaryValue} ${styles.summaryDanger}`}>
+                          {tunggakan.months.length} Bulan
+                        </span>
+                      </div>
+                      <div className={styles.summaryRow}>
+                        <span className={styles.summaryLabel}>Mode Bayar:</span>
+                        <span className={styles.summaryValue}>
+                          {paymentMode === 'all'
+                            ? `Bayar Semua (${tunggakan.months.length})`
+                            : 'Bayar 1 Periode'}
+                        </span>
+                      </div>
+                      {paymentMode === 'single' && selectedPeriodIdx !== null && tunggakan.months[selectedPeriodIdx] && (
+                        <div className={styles.summaryRow}>
+                          <span className={styles.summaryLabel}>Periode:</span>
+                          <span className={styles.summaryValue}>
+                            {tunggakan.months[selectedPeriodIdx].bulan}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {!(form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1) && (
+                    <>
+                      <div className={styles.summaryRow}>
+                        <span className={styles.summaryLabel}>Uang Bayar:</span>
+                        <span
+                          className={`${styles.summaryValue} ${
+                            jumlahNumeric > 0 ? '' : styles.summaryMuted
+                          }`}
+                        >
+                          {formatRupiah(jumlahNumeric)}
+                        </span>
+                      </div>
+                      <div className={styles.summaryRow}>
+                        <span className={styles.summaryLabel}>Kembalian:</span>
+                        <span
+                          className={`${styles.summaryValue} ${
+                            kembalian > 0 ? styles.summaryAccent : styles.summaryMuted
+                          }`}
+                        >
+                          {formatRupiah(kembalian)}
+                        </span>
+                      </div>
+
+                      {kurangBayar > 0 && (
+                        <div className={styles.summaryRow}>
+                          <span className={styles.summaryLabel}>Kurang:</span>
+                          <span className={`${styles.summaryValue} ${styles.summaryDanger}`}>
+                            {formatRupiah(kurangBayar)}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className={styles.summaryTotalWrap}>
-                    <p className={styles.summaryTotalLabel}>Total Tagihan:</p>
+                    <p className={styles.summaryTotalLabel}>
+                      {form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1
+                        ? paymentMode === 'all'
+                          ? `Total Tagihan (${tunggakan.months.length} × SPP):`
+                          : 'Total Tagihan (1 × SPP):'
+                        : 'Total Tagihan:'}
+                    </p>
                     <p className={styles.summaryTotalValue}>
-                      {formatRupiah(totalTagihan)}
+                      {formatRupiah(
+                        form.jenisPembayaran === 'SPP' && tunggakan.months.length > 1
+                          ? (Number(form.selectedSiswa?.spp) || 0) *
+                            (paymentMode === 'all' ? tunggakan.months.length : 1)
+                          : totalTagihan
+                      )}
                     </p>
                   </div>
                 </div>
               </section>
             </aside>
           </form>
-        </section>
-      </main>
-    </div>
+    </AdminLayout>
   );
 };
 

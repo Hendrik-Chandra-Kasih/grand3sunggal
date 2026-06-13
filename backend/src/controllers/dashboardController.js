@@ -1,4 +1,4 @@
-import { query, queryOne, queryScalar } from '../config/query.js';
+import { query, queryScalar } from '../config/query.js';
 
 const HARI_MAP_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const MONTHS_ID = [
@@ -255,14 +255,15 @@ export const getTransaksiPending = async (req, res) => {
 };
 
 // GET /api/dashboard/piutang
-// SPP jatuh tempo setiap tanggal SPP_DUE_DAY (default tanggal 10).
-// Hanya tampilkan piutang jika hari ini sudah melewati tanggal jatuh tempo,
-// dan siswa yang tanggal_masuk-nya sudah lebih dari 1 hari kalender dari
-// hari ini. Siswa dengan tanggal_masuk NULL (data lama) dan hari yang
-// sama dengan pendaftaran tidak ditampilkan agar kolom keterlambatan
-// tidak pernah menampilkan "0 Hari".
-const SPP_DUE_DAY = 10;
-
+// Logika: untuk setiap siswa Aktif, generate list bulan dari
+// (tanggal_masuk + 1 bulan) sampai bulan sekarang. Untuk setiap
+// bulan tersebut, cek apakah ada pembayaran dengan status 'Verified'
+// yang `tanggal_verifikasi`-nya jatuh di bulan tersebut (periode tagihan
+// yang sudah dibayar). Jika tidak ada → siswa punya tunggakan. Tiap
+// siswa hanya ditampilkan 1 baris (piutang terlama) dengan info
+// tambahan "tunggakan" = jumlah bulan nunggak.
+// Due date tiap bulan: tanggal_masuk + N bulan (N = 1, 2, 3, ...).
+// "Keterlambatan" = hari ini - due date piutang terlama.
 export const getPiutangSiswa = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -271,80 +272,115 @@ export const getPiutangSiswa = async (req, res) => {
 
     const now = new Date();
     const today = startOfDay(now);
-    const dueDate = new Date(now.getFullYear(), now.getMonth(), SPP_DUE_DAY);
-    const bulanIni = `${MONTHS_ID[now.getMonth()]} ${now.getFullYear()}`;
 
-    // Belum jatuh tempo → tidak ada piutang yang ditampilkan.
-    if (today < dueDate) {
-      return res.json({
-        success: true,
-        data: [],
-        meta: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 1,
-        },
-      });
+    // Ambil semua siswa Aktif dengan tanggal_masuk tidak NULL.
+    // WHERE tanggal_masuk <= tanggal_masuk + INTERVAL 1 MONTH
+    // memastikan siswa baru (kurang dari 1 bulan) tidak diproses.
+    const siswaList = await query(
+      `SELECT id_siswa, nama, spp, no_hp_ortu, tanggal_masuk
+       FROM siswa
+       WHERE status = 'Aktif'
+         AND tanggal_masuk IS NOT NULL
+         AND tanggal_masuk <= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+       ORDER BY nama ASC`
+    );
+
+    // Ambil semua pembayaran Verified. Periode dibayar ditentukan dari
+    // `tanggal_verifikasi` (bukan `bulan` lagi) — setelah perubahan
+    // semantic, `tanggal_verifikasi` merepresentasikan due-date periode
+    // yang dilunasi (untuk tunggakan = tanggal_jatuh_tempo bulan
+    // sebelumnya; untuk pembayaran normal = hari ini → bulan berjalan).
+    const pembayaranList = await query(
+      `SELECT id_siswa, tanggal_verifikasi
+       FROM pembayaran
+       WHERE status = 'Verified'
+         AND tanggal_verifikasi IS NOT NULL`
+    );
+
+    // Build map: id_siswa → Set<bulan> yang sudah dibayar,
+    // diturunkan dari bulan/tahun `tanggal_verifikasi`.
+    const paidMap = new Map();
+    for (const p of pembayaranList) {
+      const tv = p.tanggal_verifikasi instanceof Date
+        ? p.tanggal_verifikasi
+        : new Date(p.tanggal_verifikasi);
+      if (Number.isNaN(tv.getTime())) continue;
+      const bulanStr = `${MONTHS_ID[tv.getMonth()]} ${tv.getFullYear()}`;
+      if (!paidMap.has(p.id_siswa)) paidMap.set(p.id_siswa, new Set());
+      paidMap.get(p.id_siswa).add(bulanStr);
     }
 
-    // Filter: hanya siswa yang sudah terdaftar minimal 1 hari kalender.
-    // tanggal_masuk NULL (data lama) dan hari yang sama dengan pendaftaran
-    // dikecualikan supaya kolom keterlambatan tidak pernah "0 Hari".
-    const dateFilter = `s.tanggal_masuk IS NOT NULL AND s.tanggal_masuk < CURDATE()`;
+    // Generate piutang: 1 row per siswa yang punya tunggakan
+    const piutangList = [];
+    for (const s of siswaList) {
+      // Parse tanggal_masuk ke local Date agar konsisten
+      // di semua timezone (MySQL DATE bisa datang sebagai Date
+      // object atau 'YYYY-MM-DD' string tergantung driver).
+      const tglMasuk = s.tanggal_masuk instanceof Date
+        ? new Date(
+            s.tanggal_masuk.getFullYear(),
+            s.tanggal_masuk.getMonth(),
+            s.tanggal_masuk.getDate()
+          )
+        : (() => {
+            const [y, m, d] = String(s.tanggal_masuk).split('-').map(Number);
+            return new Date(y, m - 1, d);
+          })();
+      const paidSet = paidMap.get(s.id_siswa) || new Set();
 
-    // Total piutang
-    const totalRow = await queryOne(
-      `SELECT COUNT(*) AS total
-       FROM siswa s
-       LEFT JOIN pembayaran p
-         ON p.id_siswa = s.id_siswa
-        AND p.status   = 'Verified'
-        AND p.bulan    = ?
-       WHERE s.status  = 'Aktif'
-         AND ${dateFilter}
-         AND p.id_pembayaran IS NULL`,
-      [bulanIni]
-    );
-    const total = Number(totalRow?.total) || 0;
+      const unpaidPeriods = [];
+      // Mulai dari 1 bulan setelah tanggal_masuk
+      let cursor = new Date(tglMasuk.getFullYear(), tglMasuk.getMonth() + 1, 1);
+      const endMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      let monthsFromMasuk = 1;
 
-    // Ambil halaman data (LIMIT/OFFSET di-inline karena mysql2 prepared
-    // statements tidak support numeric placeholder untuk LIMIT/OFFSET)
-    const rows = await query(
-      `SELECT
-         s.id_siswa,
-         s.nama,
-         s.spp,
-         s.no_hp_ortu,
-         s.tanggal_masuk
-       FROM siswa s
-       LEFT JOIN pembayaran p
-         ON p.id_siswa = s.id_siswa
-        AND p.status   = 'Verified'
-        AND p.bulan    = ?
-       WHERE s.status  = 'Aktif'
-         AND ${dateFilter}
-         AND p.id_pembayaran IS NULL
-       ORDER BY s.nama ASC
-       LIMIT ${limit} OFFSET ${offset}`,
-      [bulanIni]
-    );
+      while (cursor.getTime() <= endMonth.getTime()) {
+        const bulanStr = `${MONTHS_ID[cursor.getMonth()]} ${cursor.getFullYear()}`;
 
-    // diffDays menggunakan startOfDay → perbandingan calendar day,
-    // bukan selisih 24 jam dari jam saat ini.
-    const data = rows.map((s) => {
-      const keterlambatan = s.tanggal_masuk
-        ? diffDays(now, new Date(s.tanggal_masuk))
-        : 0;
-      return {
-        id: s.id_siswa,
-        nama: s.nama,
-        bulan: bulanIni,
-        nominal: formatRupiah(s.spp),
-        keterlambatan: `${keterlambatan} Hari`,
-        whatsapp: s.no_hp_ortu || '-',
-      };
+        if (!paidSet.has(bulanStr)) {
+          // Due date = tanggal_masuk + N bulan
+          const dueDate = new Date(
+            tglMasuk.getFullYear(),
+            tglMasuk.getMonth() + monthsFromMasuk,
+            tglMasuk.getDate()
+          );
+          unpaidPeriods.push({
+            bulan: bulanStr,
+            dueDate,
+            keterlambatan: diffDays(today, dueDate),
+          });
+        }
+
+        // Next month
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        monthsFromMasuk += 1;
+      }
+
+      if (unpaidPeriods.length > 0) {
+        const oldest = unpaidPeriods[0];
+        // Nominal total = tunggakan (jumlah bulan) × spp siswa
+        const totalNominal = unpaidPeriods.length * Number(s.spp || 0);
+        piutangList.push({
+          id: s.id_siswa,
+          nama: s.nama,
+          bulan: oldest.bulan,
+          nominal: formatRupiah(totalNominal),
+          tunggakan: `${unpaidPeriods.length} Bulan`,
+          keterlambatan: `${oldest.keterlambatan} Hari`,
+          whatsapp: s.no_hp_ortu || '-',
+        });
+      }
+    }
+
+    // Sort: keterlambatan terlama di atas
+    piutangList.sort((a, b) => {
+      const aK = parseInt(a.keterlambatan, 10) || 0;
+      const bK = parseInt(b.keterlambatan, 10) || 0;
+      return bK - aK;
     });
+
+    const total = piutangList.length;
+    const data = piutangList.slice(offset, offset + limit);
 
     res.json({
       success: true,
