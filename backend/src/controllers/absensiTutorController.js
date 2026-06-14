@@ -127,3 +127,102 @@ export const saveTutorAttendanceBulk = async (req, res) => {
     handleError(res, error);
   }
 };
+
+// GET /api/absensi-tutor/recap
+export const getTutorAttendanceRecap = async (req, res) => {
+  try {
+    const { bulan, tahun } = req.query;
+    const today = new Date();
+    const targetMonth = bulan ? parseInt(bulan, 10) : today.getMonth() + 1; // 1-12
+    const targetYear = tahun ? parseInt(tahun, 10) : today.getFullYear();
+
+    // Get all active tutors and their classes
+    const tutors = await query(
+      `SELECT
+         t.id_tutor,
+         t.nama_tutor,
+         t.mapel,
+         GROUP_CONCAT(DISTINCT k.nama_kelas ORDER BY k.nama_kelas SEPARATOR ', ') AS kelas_list
+       FROM tutor t
+       LEFT JOIN kelas k ON k.id_tutor = t.id_tutor
+       WHERE t.status = 'Aktif'
+       GROUP BY t.id_tutor, t.nama_tutor, t.mapel
+       ORDER BY t.nama_tutor ASC`
+    );
+
+    // Get attendance records for the selected month and year
+    const attendanceRecords = await query(
+      `SELECT id_tutor, DAY(tanggal) AS hari, status
+       FROM absensi_tutor
+       WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?`,
+      [targetMonth, targetYear]
+    );
+
+    // Group attendance by tutor
+    const attendanceMap = {};
+    attendanceRecords.forEach((rec) => {
+      if (!attendanceMap[rec.id_tutor]) {
+        attendanceMap[rec.id_tutor] = {};
+      }
+      attendanceMap[rec.id_tutor][rec.hari] = rec.status;
+    });
+
+    // Calculate number of days in the selected month
+    const numDays = new Date(targetYear, targetMonth, 0).getDate();
+
+    const data = tutors.map((tutor) => {
+      const tutorAttendance = attendanceMap[tutor.id_tutor] || {};
+      const days = [];
+      let hadirCount = 0;
+      let alphaCount = 0;
+
+      for (let d = 1; d <= numDays; d++) {
+        const dateObj = new Date(targetYear, targetMonth - 1, d);
+        const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+        const status = tutorAttendance[d] || null;
+
+        let displayStatus = 'alpha'; // default for weekdays with no data
+        if (status === 'Hadir') {
+          displayStatus = 'hadir';
+          hadirCount++;
+        } else if (status === 'Absen') {
+          displayStatus = 'alpha';
+          alphaCount++;
+        } else if (isWeekend) {
+          displayStatus = 'weekend';
+        } else {
+          displayStatus = 'alpha';
+          alphaCount++;
+        }
+
+        days.push({
+          day: d,
+          status: displayStatus,
+        });
+      }
+
+      return {
+        id_tutor: tutor.id_tutor,
+        nama_tutor: tutor.nama_tutor,
+        kelas_list: tutor.kelas_list || tutor.mapel || '-',
+        hadir: hadirCount,
+        alpha: alphaCount,
+        days,
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+      meta: {
+        bulan: targetMonth,
+        tahun: targetYear,
+        jumlah_hari: numDays,
+      },
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};

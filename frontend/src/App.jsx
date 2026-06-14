@@ -14,6 +14,7 @@ import ManajemenTutor from './pages/dashboard/admin/manajemen_tutor'
 import TambahTutor from './pages/dashboard/admin/tambah_tutor'
 import PresensiTutor from './pages/dashboard/admin/presensi_tutor'
 import ManajemenJadwal from './pages/dashboard/admin/manajemen_jadwal'
+import RekapAbsensi from './pages/dashboard/admin/rekap_absensi'
 import './App.css'
 
 function App() {
@@ -90,6 +91,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <ManajemenJadwal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/absensi"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <RekapAbsensi />
             </ProtectedRoute>
           }
         />
