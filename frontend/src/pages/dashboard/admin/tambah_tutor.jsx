@@ -32,19 +32,8 @@ const slugify = (value) =>
     .replace(/\.{2,}/g, '.')
     .replace(/^\.|\.$/g, '');
 
-const formatDateStamp = (date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}${m}${d}`;
-};
-
-const buildUsername = (nama, tanggalBergabung) => {
-  const namaSlug = slugify(nama);
-  const dateStamp = formatDateStamp(
-    tanggalBergabung ? new Date(tanggalBergabung) : new Date()
-  );
-  return [namaSlug, 'tutor', dateStamp].filter(Boolean).join('_');
+const buildUsername = (nama) => {
+  return slugify(nama);
 };
 
 // Random password 10 karakter (huruf besar, kecil, angka) — tutor bisa ubah nanti
@@ -197,11 +186,8 @@ const TambahTutor = () => {
 
     setSubmitting(true);
 
-    // Bangun username otomatis dari nama + tanggal bergabung
-    const username = buildUsername(
-      formData.namaTutor,
-      formData.tanggalBergabung
-    );
+    // Bangun username otomatis dari nama (slug + id user)
+    const baseUsername = buildUsername(formData.namaTutor);
     const password = generatePassword(10);
 
     try {
@@ -209,14 +195,14 @@ const TambahTutor = () => {
       let userResponse;
       try {
         userResponse = await api.post('/auth/register', {
-          username,
+          username: baseUsername,
           password,
           role: 'tutor',
         });
       } catch (err) {
         // Username bentrok → generate suffix acak
         if (err.response?.status === 409) {
-          const usernameRetry = `${username}_${Math.floor(
+          const usernameRetry = `${baseUsername}_${Math.floor(
             1000 + Math.random() * 9000
           )}`;
           userResponse = await api.post('/auth/register', {
@@ -236,6 +222,14 @@ const TambahTutor = () => {
 
       if (!idUser) {
         throw new Error('Gagal mendapatkan id_user dari server.');
+      }
+
+      // Update username dengan format: namaSlug + idUser
+      const finalUsername = `${baseUsername}${idUser}`;
+      try {
+        await api.put('/auth/update-username', { id_user: idUser, username: finalUsername });
+      } catch (err) {
+        console.error('Gagal update username:', err);
       }
 
       // 2) Simpan data tutor
@@ -263,14 +257,14 @@ const TambahTutor = () => {
       // Siapkan tautan WhatsApp untuk pengiriman kredensial
       const whatsappMessage = buildWhatsAppMessage({
         nama: formData.namaTutor,
-        username,
+        username: finalUsername,
         password,
       });
       const whatsappLink = buildWhatsAppLink(formData.noHp, whatsappMessage);
 
       setSubmitResult({
         tutor,
-        credentials: { username, password },
+        credentials: { username: finalUsername, password },
         whatsappLink,
         message: whatsappMessage,
       });

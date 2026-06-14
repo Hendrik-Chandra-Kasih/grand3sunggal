@@ -15,6 +15,11 @@ import TambahTutor from './pages/dashboard/admin/tambah_tutor'
 import PresensiTutor from './pages/dashboard/admin/presensi_tutor'
 import ManajemenJadwal from './pages/dashboard/admin/manajemen_jadwal'
 import RekapAbsensi from './pages/dashboard/admin/rekap_absensi'
+import TutorLayout from './components/tutor/TutorLayout'
+import JadwalMengajar from './pages/dashboard/tutor/jadwal_mengajar'
+import Kehadiran from './pages/dashboard/tutor/kehadiran'
+import Gaji from './pages/dashboard/tutor/gaji'
+import ProfileTutor from './pages/dashboard/tutor/profile'
 import './App.css'
 
 function App() {
@@ -99,6 +104,54 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <RekapAbsensi />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <Navigate to="/tutor/jadwal-mengajar" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor/profile"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <TutorLayout>
+                <ProfileTutor />
+              </TutorLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor/jadwal-mengajar"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <TutorLayout>
+                <JadwalMengajar />
+              </TutorLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor/kehadiran"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <TutorLayout>
+                <Kehadiran />
+              </TutorLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor/gaji"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <TutorLayout>
+                <Gaji />
+              </TutorLayout>
             </ProtectedRoute>
           }
         />

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAllTutor,
   getTutorById,
+  getTutorByUserId,
   createTutor,
   updateTutor,
   deleteTutor,
@@ -10,6 +11,7 @@ import {
 const router = Router();
 
 router.get('/', getAllTutor);
+router.get('/by-user/:id_user', getTutorByUserId);
 router.get('/:id', getTutorById);
 router.post('/', createTutor);
 router.put('/:id', updateTutor);

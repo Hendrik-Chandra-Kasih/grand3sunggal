@@ -34,6 +34,19 @@ export const getTutorById = async (req, res) => {
   }
 };
 
+// GET /api/guru/by-user/:id_user
+export const getTutorByUserId = async (req, res) => {
+  try {
+    const tutor = await tutorRepository.findByUserId(parseInt(req.params.id_user, 10));
+    if (!tutor) {
+      return res.status(404).json({ success: false, message: 'Tutor tidak ditemukan' });
+    }
+    res.json({ success: true, data: tutor });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 // POST /api/guru
 export const createTutor = async (req, res) => {
   try {

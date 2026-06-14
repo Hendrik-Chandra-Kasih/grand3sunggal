@@ -107,18 +107,8 @@ const slugify = (value) =>
     .replace(/\.{2,}/g, '.')
     .replace(/^\.|\.$/g, '');
 
-const formatDateStamp = (date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}${m}${d}`;
-};
-
-const buildUsername = (nama, kelas, tanggalMasuk) => {
-  const namaSlug = slugify(nama);
-  const kelasSlug = slugify(kelas.replace(/^kelas\s+/i, ''));
-  const dateStamp = formatDateStamp(tanggalMasuk ? new Date(tanggalMasuk) : new Date());
-  return [namaSlug, kelasSlug, dateStamp].filter(Boolean).join('_');
+const buildUsername = (nama) => {
+  return slugify(nama);
 };
 
 // Random password 10 karakter (huruf besar, kecil, angka) — siswa bisa ubah nanti
@@ -282,7 +272,7 @@ const PendaftaranSiswa = () => {
       : new Date();
     const today = new Date();
 
-    const username = buildUsername(formData.namaLengkap, formData.kelas, tanggalMasukDate);
+    const baseUsername = buildUsername(formData.namaLengkap);
     const password = generatePassword(10);
     const sppNumeric = parseNumericInput(biaya.sppBulanan);
     const modulNumeric = parseNumericInput(biaya.modulBuku);
@@ -294,14 +284,14 @@ const PendaftaranSiswa = () => {
       let userResponse;
       try {
         userResponse = await api.post('/auth/register', {
-          username,
+          username: baseUsername,
           password,
           role: 'siswa',
         });
       } catch (err) {
         // Kalau username bentrok, generate ulang dengan suffix acak
         if (err.response?.status === 409) {
-          const usernameRetry = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+          const usernameRetry = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
           userResponse = await api.post('/auth/register', {
             username: usernameRetry,
             password,
@@ -319,6 +309,14 @@ const PendaftaranSiswa = () => {
 
       if (!idUser) {
         throw new Error('Gagal mendapatkan id_user dari server.');
+      }
+
+      // Update username dengan format: namaSlug + idUser
+      const finalUsername = `${baseUsername}${idUser}`;
+      try {
+        await api.put('/auth/update-username', { id_user: idUser, username: finalUsername });
+      } catch (err) {
+        console.error('Gagal update username:', err);
       }
 
       // 2) Simpan data siswa
@@ -371,14 +369,14 @@ const PendaftaranSiswa = () => {
       // 4) Siapkan tautan WhatsApp
       const message = buildWhatsAppMessage({
         nama: formData.namaLengkap,
-        username,
+        username: finalUsername,
         password,
       });
       const whatsappLink = buildWhatsAppLink(formData.noTelpWali, message);
 
       setSubmitResult({
         siswa,
-        credentials: { username, password },
+        credentials: { username: finalUsername, password },
         whatsappLink,
         message,
       });
