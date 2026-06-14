@@ -18,21 +18,11 @@ import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_tutor.module.css';
 
-const MAPEL_OPTIONS = [
-  'Calistung',
-  'Bimbel SD',
-  'Bimbel SMP',
-  'Bimbel SMA',
-  'English Course',
-  'Mafia',
-];
-
 const STATUS_OPTIONS = [
+  { value: 'all', label: 'Semua status' },
   { value: 'Aktif', label: 'Aktif' },
   { value: 'Nonaktif', label: 'Nonaktif' },
 ];
-
-const HARI_OPTIONS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
 const splitList = (value) => {
   if (!value) return [];
@@ -68,6 +58,7 @@ const initialEditForm = {
   status: 'Aktif',
   alamat: '',
   no_hp: '',
+  mapel: [],
 };
 
 const ManajemenTutor = () => {
@@ -79,6 +70,7 @@ const ManajemenTutor = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [mapelFilter, setMapelFilter] = useState('all');
+  const [mapelOptions, setMapelOptions] = useState([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,9 +109,21 @@ const ManajemenTutor = () => {
     }
   }, []);
 
+  const fetchMapelOptions = useCallback(async () => {
+    try {
+      const response = await api.get('/mapel');
+      const data = Array.isArray(response.data?.data) ? response.data.data : [];
+      setMapelOptions(data);
+    } catch (err) {
+      console.error('Fetch mapel error:', err);
+      setMapelOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTutor();
-  }, [fetchTutor]);
+    fetchMapelOptions();
+  }, [fetchTutor, fetchMapelOptions]);
 
   // Daftar mapel unik yang muncul di data (untuk filter)
   const availableMapel = useMemo(() => {
@@ -127,9 +131,11 @@ const ManajemenTutor = () => {
     tutorList.forEach((t) => {
       splitList(t.mapel).forEach((m) => set.add(m));
     });
-    MAPEL_OPTIONS.forEach((opt) => set.add(opt));
+    mapelOptions.forEach((item) => {
+      if (item?.nama_mapel) set.add(item.nama_mapel);
+    });
     return Array.from(set);
-  }, [tutorList]);
+  }, [mapelOptions, tutorList]);
 
   // Filter + search
   const filteredTutor = useMemo(() => {
@@ -181,8 +187,21 @@ const ManajemenTutor = () => {
       status: tutor.status || 'Aktif',
       alamat: tutor.alamat || '',
       no_hp: tutor.no_hp || '',
+      mapel: splitList(tutor.mapel),
     });
     setEditError(null);
+  };
+
+  const toggleMapel = (value) => {
+    setEditForm((prev) => {
+      const exists = prev.mapel.includes(value);
+      return {
+        ...prev,
+        mapel: exists
+          ? prev.mapel.filter((v) => v !== value)
+          : [...prev.mapel, value],
+      };
+    });
   };
 
   const closeDetailModal = () => {
@@ -225,6 +244,7 @@ const ManajemenTutor = () => {
         alamat: editForm.alamat || null,
         no_hp: editForm.no_hp || null,
         status: editForm.status,
+        mapel: editForm.mapel.join(', ') || null,
       };
       const response = await api.put(`/guru/${editingTutor.id_tutor}`, payload);
       const updated = response.data?.data;
@@ -366,6 +386,39 @@ const ManajemenTutor = () => {
               setCurrentPage(1);
             }}
           />
+        </div>
+
+        <div className={styles.filterBar}>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className={styles.filterSelect}
+            value={mapelFilter}
+            onChange={(e) => {
+              setMapelFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">Semua mapel</option>
+            {availableMapel.map((mapel) => (
+              <option key={mapel} value={mapel}>
+                {mapel}
+              </option>
+            ))}
+          </select>
         </div>
       </section>
 
@@ -785,6 +838,33 @@ const ManajemenTutor = () => {
                   disabled={saving}
                   rows={4}
                 />
+              </div>
+
+              {/* Mata Pelajaran (multi-select chip) */}
+              <div className={styles.field}>
+                <label className={styles.label}>Mata Pelajaran</label>
+                <div className={styles.chipSelectGroup}>
+                  {mapelOptions.map((opt) => {
+                    const selected = editForm.mapel.includes(opt.nama_mapel);
+                    return (
+                      <button
+                        key={opt.id_mapel}
+                        type="button"
+                        className={`${styles.chipSelect} ${
+                          selected ? styles.chipSelectActive : ''
+                        }`}
+                        onClick={() => !saving && toggleMapel(opt.nama_mapel)}
+                        disabled={saving}
+                      >
+                        {opt.nama_mapel}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={styles.fieldHint}>
+                  Pilih satu atau lebih mata pelajaran. Tersimpan sebagai daftar
+                  dipisah koma.
+                </p>
               </div>
 
               <div className={styles.modalActions}>

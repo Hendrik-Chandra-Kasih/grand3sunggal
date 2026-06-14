@@ -4,7 +4,7 @@ const TABLE = 'absensi_siswa';
 
 const COLUMNS = [
   'id_absensi', 'id_siswa', 'id_jadwal', 'tanggal', 'pertemuan',
-  'status', 'topik_pembelajaran', 'is_confirmed', 'confirmed_at', 'confirmed_by',
+  'status', 'id_mapel', 'is_confirmed', 'confirmed_at', 'confirmed_by',
 ];
 
 /**
@@ -63,14 +63,54 @@ export class AbsensiSiswaRepository {
   async findAll(options = {}) {
     const { sql: whereSql, params } = buildAbsensiWhere(options.where || {});
     return await query(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` ${whereSql} ORDER BY id_absensi DESC`,
+      `SELECT
+         a.id_absensi,
+         a.id_siswa,
+         a.id_jadwal,
+         a.tanggal,
+         a.pertemuan,
+         a.status,
+         a.id_mapel,
+         a.is_confirmed,
+         a.confirmed_at,
+         a.confirmed_by,
+         s.nama AS nama_siswa,
+         m.nama_mapel,
+         k.nama_kelas
+       FROM \`${TABLE}\` a
+       INNER JOIN \`siswa\` s ON s.id_siswa = a.id_siswa
+       INNER JOIN \`jadwal\` j ON j.id_jadwal = a.id_jadwal
+       INNER JOIN \`kelas\` k ON k.id_kelas = j.id_kelas
+       LEFT JOIN \`mapel\` m ON m.id_mapel = a.id_mapel
+       ${whereSql}
+       ORDER BY a.id_absensi DESC`,
       params
     );
   }
 
   async findById(id) {
     return await queryOne(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` WHERE id_absensi = ? LIMIT 1`,
+      `SELECT
+         a.id_absensi,
+         a.id_siswa,
+         a.id_jadwal,
+         a.tanggal,
+         a.pertemuan,
+         a.status,
+         a.id_mapel,
+         a.is_confirmed,
+         a.confirmed_at,
+         a.confirmed_by,
+         s.nama AS nama_siswa,
+         m.nama_mapel,
+         k.nama_kelas
+       FROM \`${TABLE}\` a
+       INNER JOIN \`siswa\` s ON s.id_siswa = a.id_siswa
+       INNER JOIN \`jadwal\` j ON j.id_jadwal = a.id_jadwal
+       INNER JOIN \`kelas\` k ON k.id_kelas = j.id_kelas
+       LEFT JOIN \`mapel\` m ON m.id_mapel = a.id_mapel
+       WHERE a.id_absensi = ?
+       LIMIT 1`,
       [id]
     );
   }

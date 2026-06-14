@@ -12,6 +12,7 @@ import PembayaranSiswa from './pages/dashboard/admin/pembayaran_siswa'
 import ManajemenSiswa from './pages/dashboard/admin/manajemen_siswa'
 import ManajemenTutor from './pages/dashboard/admin/manajemen_tutor'
 import TambahTutor from './pages/dashboard/admin/tambah_tutor'
+import PresensiTutor from './pages/dashboard/admin/presensi_tutor'
 import './App.css'
 
 function App() {
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <TambahTutor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/presensi_guru"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <PresensiTutor />
             </ProtectedRoute>
           }
         />

@@ -19,6 +19,7 @@ const baseConfig = {
 };
 
 const TABLES_IN_DROP_ORDER = [
+  'schema_migrations',
   'gaji_tutor',
   'absensi_tutor',
   'absensi_siswa',
@@ -26,6 +27,7 @@ const TABLES_IN_DROP_ORDER = [
   'jadwal',
   'kelas_siswa',
   'kelas',
+  'mapel',
   'tutor',
   'siswa',
   'users',

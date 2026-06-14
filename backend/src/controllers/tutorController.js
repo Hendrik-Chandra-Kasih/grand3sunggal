@@ -75,6 +75,7 @@ export const createTutor = async (req, res) => {
       no_hp: req.body.no_hp || null,
       tanggal_bergabung: req.body.tanggal_bergabung || null,
       status: req.body.status || 'Aktif',
+      mapel: req.body.mapel || null,
     };
 
     const tutor = await tutorRepository.create(payload);

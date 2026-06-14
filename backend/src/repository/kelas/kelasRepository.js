@@ -2,26 +2,50 @@ import { query, queryOne } from '../../config/query.js';
 
 const TABLE = 'kelas';
 
-const COLUMNS = ['id_kelas', 'nama_kelas', 'jenjang', 'id_tutor'];
+const SELECT_COLUMNS = [
+  'k.id_kelas',
+  'k.nama_kelas',
+  'k.id_mapel',
+  'm.nama_mapel',
+  'k.id_tutor',
+  't.nama_tutor',
+];
+
+const FILTER_COLUMN_MAP = {
+  id_kelas: 'k.id_kelas',
+  id_mapel: 'k.id_mapel',
+  id_tutor: 'k.id_tutor',
+  nama_kelas: 'k.nama_kelas',
+};
 
 export class KelasRepository {
   async findAll(options = {}) {
     const filters = options.where || {};
-    const whereKeys = Object.keys(filters);
+    const whereKeys = Object.keys(filters).filter((key) => FILTER_COLUMN_MAP[key]);
     const whereSql = whereKeys.length
-      ? 'WHERE ' + whereKeys.map((k) => `\`${k}\` = ?`).join(' AND ')
+      ? 'WHERE ' + whereKeys.map((key) => `${FILTER_COLUMN_MAP[key]} = ?`).join(' AND ')
       : '';
     const params = whereKeys.map((k) => filters[k]);
 
     return await query(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` ${whereSql} ORDER BY id_kelas DESC`,
+      `SELECT ${SELECT_COLUMNS.join(', ')}
+       FROM \`${TABLE}\` k
+       LEFT JOIN \`mapel\` m ON m.id_mapel = k.id_mapel
+       LEFT JOIN \`tutor\` t ON t.id_tutor = k.id_tutor
+       ${whereSql}
+       ORDER BY k.id_kelas DESC`,
       params
     );
   }
 
   async findById(id) {
     return await queryOne(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` WHERE id_kelas = ? LIMIT 1`,
+      `SELECT ${SELECT_COLUMNS.join(', ')}
+       FROM \`${TABLE}\` k
+       LEFT JOIN \`mapel\` m ON m.id_mapel = k.id_mapel
+       LEFT JOIN \`tutor\` t ON t.id_tutor = k.id_tutor
+       WHERE k.id_kelas = ?
+       LIMIT 1`,
       [id]
     );
   }

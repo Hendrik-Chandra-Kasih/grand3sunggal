@@ -5,7 +5,7 @@ const TABLE = 'tutor';
 const COLUMNS = [
   'id_tutor', 'id_user', 'nama_tutor', 'tempat_lahir', 'tanggal_lahir',
   'jenis_kelamin', 'alamat', 'pendidikan', 'no_hp',
-  'tanggal_bergabung', 'status',
+  'tanggal_bergabung', 'status', 'mapel',
 ];
 
 export class TutorRepository {
@@ -28,12 +28,9 @@ export class TutorRepository {
          t.no_hp,
          t.tanggal_bergabung,
          t.status,
+         t.mapel,
          t.nama_tutor AS nama,
          COALESCE(u.username, CONCAT('TUTOR-', t.id_tutor)) AS nip,
-         COALESCE(
-           GROUP_CONCAT(DISTINCT k.nama_kelas ORDER BY k.nama_kelas SEPARATOR ', '),
-           ''
-         ) AS mapel,
          COALESCE(
            GROUP_CONCAT(
              DISTINCT j.hari
@@ -44,7 +41,6 @@ export class TutorRepository {
          ) AS jadwal
        FROM \`${TABLE}\` t
        LEFT JOIN \`users\` u ON u.id_user = t.id_user
-       LEFT JOIN \`kelas\` k ON k.id_tutor = t.id_tutor
        LEFT JOIN \`jadwal\` j ON j.id_tutor = t.id_tutor
        ${whereSql}
        GROUP BY
@@ -59,7 +55,8 @@ export class TutorRepository {
          t.pendidikan,
          t.no_hp,
          t.tanggal_bergabung,
-         t.status
+         t.status,
+         t.mapel
        ORDER BY t.id_tutor DESC`,
       params
     );
@@ -80,12 +77,9 @@ export class TutorRepository {
          t.no_hp,
          t.tanggal_bergabung,
          t.status,
+         t.mapel,
          t.nama_tutor AS nama,
          COALESCE(u.username, CONCAT('TUTOR-', t.id_tutor)) AS nip,
-         COALESCE(
-           GROUP_CONCAT(DISTINCT k.nama_kelas ORDER BY k.nama_kelas SEPARATOR ', '),
-           ''
-         ) AS mapel,
          COALESCE(
            GROUP_CONCAT(
              DISTINCT j.hari
@@ -96,7 +90,6 @@ export class TutorRepository {
          ) AS jadwal
        FROM \`${TABLE}\` t
        LEFT JOIN \`users\` u ON u.id_user = t.id_user
-       LEFT JOIN \`kelas\` k ON k.id_tutor = t.id_tutor
        LEFT JOIN \`jadwal\` j ON j.id_tutor = t.id_tutor
        WHERE t.id_tutor = ?
        GROUP BY
@@ -111,7 +104,8 @@ export class TutorRepository {
          t.pendidikan,
          t.no_hp,
          t.tanggal_bergabung,
-         t.status
+         t.status,
+         t.mapel
        LIMIT 1`,
       [id]
     );

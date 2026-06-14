@@ -2,26 +2,56 @@ import { query, queryOne } from '../../config/query.js';
 
 const TABLE = 'jadwal';
 
-const COLUMNS = ['id_jadwal', 'id_kelas', 'id_tutor', 'hari', 'jam'];
+const SELECT_COLUMNS = [
+  'j.id_jadwal',
+  'j.id_kelas',
+  'j.id_tutor',
+  'j.id_mapel',
+  'j.hari',
+  'j.jam',
+  'k.nama_kelas',
+  'm.nama_mapel',
+  't.nama_tutor',
+];
+
+const FILTER_COLUMN_MAP = {
+  id_jadwal: 'j.id_jadwal',
+  id_kelas: 'j.id_kelas',
+  id_tutor: 'j.id_tutor',
+  id_mapel: 'j.id_mapel',
+  hari: 'j.hari',
+};
 
 export class JadwalRepository {
   async findAll(options = {}) {
     const filters = options.where || {};
-    const whereKeys = Object.keys(filters);
+    const whereKeys = Object.keys(filters).filter((key) => FILTER_COLUMN_MAP[key]);
     const whereSql = whereKeys.length
-      ? 'WHERE ' + whereKeys.map((k) => `\`${k}\` = ?`).join(' AND ')
+      ? 'WHERE ' + whereKeys.map((key) => `${FILTER_COLUMN_MAP[key]} = ?`).join(' AND ')
       : '';
     const params = whereKeys.map((k) => filters[k]);
 
     return await query(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` ${whereSql} ORDER BY id_jadwal DESC`,
+      `SELECT ${SELECT_COLUMNS.join(', ')}
+       FROM \`${TABLE}\` j
+       INNER JOIN \`kelas\` k ON k.id_kelas = j.id_kelas
+       LEFT JOIN \`mapel\` m ON m.id_mapel = j.id_mapel
+       INNER JOIN \`tutor\` t ON t.id_tutor = j.id_tutor
+       ${whereSql}
+       ORDER BY j.id_jadwal DESC`,
       params
     );
   }
 
   async findById(id) {
     return await queryOne(
-      `SELECT ${COLUMNS.map((c) => `\`${c}\``).join(', ')} FROM \`${TABLE}\` WHERE id_jadwal = ? LIMIT 1`,
+      `SELECT ${SELECT_COLUMNS.join(', ')}
+       FROM \`${TABLE}\` j
+       INNER JOIN \`kelas\` k ON k.id_kelas = j.id_kelas
+       LEFT JOIN \`mapel\` m ON m.id_mapel = j.id_mapel
+       INNER JOIN \`tutor\` t ON t.id_tutor = j.id_tutor
+       WHERE j.id_jadwal = ?
+       LIMIT 1`,
       [id]
     );
   }

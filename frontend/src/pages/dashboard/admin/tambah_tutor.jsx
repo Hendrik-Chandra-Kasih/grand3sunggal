@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MdArrowBack,
@@ -107,11 +107,40 @@ const INITIAL_FORM = {
   alamat: '',
   tanggalBergabung: todayIsoDate(),
   status: 'Aktif',
+  mapel: [],
 };
 
 const TambahTutor = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(INITIAL_FORM);
+  const [mapelOptions, setMapelOptions] = useState([]);
+
+  const fetchMapelOptions = useCallback(async () => {
+    try {
+      const response = await api.get('/mapel');
+      const data = Array.isArray(response.data?.data) ? response.data.data : [];
+      setMapelOptions(data);
+    } catch (err) {
+      console.error('Fetch mapel error:', err);
+      setMapelOptions([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMapelOptions();
+  }, [fetchMapelOptions]);
+
+  const toggleMapel = (value) => {
+    setFormData((prev) => {
+      const exists = prev.mapel.includes(value);
+      return {
+        ...prev,
+        mapel: exists
+          ? prev.mapel.filter((v) => v !== value)
+          : [...prev.mapel, value],
+      };
+    });
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -221,6 +250,7 @@ const TambahTutor = () => {
         no_hp: formData.noHp || null,
         tanggal_bergabung: formData.tanggalBergabung || null,
         status: formData.status || 'Aktif',
+        mapel: formData.mapel.join(', ') || null,
       };
 
       const tutorResponse = await api.post('/guru', tutorPayload);
@@ -575,6 +605,30 @@ const TambahTutor = () => {
                   <option value="Aktif">Aktif</option>
                   <option value="Nonaktif">Nonaktif</option>
                 </select>
+              </div>
+
+              <div className={`${styles.field} ${styles.fieldFull}`}>
+                <label className={styles.label}>Mata Pelajaran</label>
+                <div className={styles.chipSelectGroup}>
+                  {mapelOptions.map((opt) => {
+                    const selected = formData.mapel.includes(opt.nama_mapel);
+                    return (
+                      <button
+                        key={opt.id_mapel}
+                        type="button"
+                        className={`${styles.chipSelect} ${
+                          selected ? styles.chipSelectActive : ''
+                        }`}
+                        onClick={() => toggleMapel(opt.nama_mapel)}
+                      >
+                        {opt.nama_mapel}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={styles.fieldHint}>
+                  Pilih satu atau lebih mata pelajaran yang diampu oleh tutor.
+                </p>
               </div>
             </div>
           </section>

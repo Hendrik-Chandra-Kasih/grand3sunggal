@@ -4,7 +4,7 @@ const TABLE = 'siswa';
 
 const COLUMNS = [
   'id_siswa', 'id_user', 'nama', 'tempat_lahir', 'tanggal_lahir',
-  'jenis_kelamin', 'kelas', 'jenis_kelas', 'asal_sekolah', 'alamat',
+  'jenis_kelamin', 'kelas', 'mapel', 'asal_sekolah', 'alamat',
   'tanggal_masuk', 'nama_ortu', 'pekerjaan_ortu', 'no_hp_ortu',
   'pendidikan_ortu', 'spp', 'status',
 ];

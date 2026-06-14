@@ -8,9 +8,11 @@ import healthRoutes from './routes/health.js'
 import authRoutes from './routes/auth.js'
 import siswaRoutes from './routes/siswa.js'
 import tutorRoutes from './routes/tutor.js'
+import mapelRoutes from './routes/mapel.js'
 import kelasRoutes from './routes/kelas.js'
 import jadwalRoutes from './routes/jadwal.js'
 import absensiSiswaRoutes from './routes/absensiSiswa.js'
+import absensiTutorRoutes from './routes/absensiTutor.js'
 import pembayaranRoutes from './routes/pembayaran.js'
 import dashboardRoutes from './routes/dashboard.js'
 
@@ -34,9 +36,11 @@ app.use('/api/health', healthRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/siswa', siswaRoutes)
 app.use('/api/guru', tutorRoutes)
+app.use('/api/mapel', mapelRoutes)
 app.use('/api/kelas', kelasRoutes)
 app.use('/api/jadwal', jadwalRoutes)
 app.use('/api/absensi-siswa', absensiSiswaRoutes)
+app.use('/api/absensi-tutor', absensiTutorRoutes)
 app.use('/api/pembayaran', pembayaranRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 

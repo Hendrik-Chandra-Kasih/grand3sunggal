@@ -48,12 +48,27 @@ export const getAbsensiSiswaById = async (req, res) => {
 // POST /api/absensi-siswa
 export const createAbsensiSiswa = async (req, res) => {
   try {
-    const { id_siswa, id_jadwal, tanggal, status } = req.body;
+    const { id_siswa, id_jadwal, tanggal, status, id_mapel } = req.body;
     if (!id_siswa || !id_jadwal || !tanggal || !status) {
       return res.status(400).json({ success: false, message: 'id_siswa, id_jadwal, tanggal, status wajib diisi' });
     }
+
+    let finalMapelId = id_mapel ? parseInt(id_mapel, 10) : null;
+    
+    // Jika id_mapel tidak dikirim, ambil otomatis dari jadwal terkait
+    if (!finalMapelId) {
+      const [jadwalRow] = await query(
+        'SELECT id_mapel FROM jadwal WHERE id_jadwal = ? LIMIT 1',
+        [parseInt(id_jadwal, 10)]
+      );
+      if (jadwalRow) {
+        finalMapelId = jadwalRow.id_mapel;
+      }
+    }
+
     const data = await absensiSiswaRepository.create({
       ...req.body,
+      id_mapel: finalMapelId,
       tanggal: new Date(tanggal),
     });
     res.status(201).json({ success: true, message: 'Absensi siswa berhasil ditambahkan', data });

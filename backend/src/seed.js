@@ -71,6 +71,14 @@ const findKelasId = async (conn, namaKelas) => {
   return rows[0]?.id_kelas || null;
 };
 
+const findMapelId = async (conn, namaMapel) => {
+  const [rows] = await conn.execute(
+    'SELECT id_mapel FROM mapel WHERE nama_mapel = ? LIMIT 1',
+    [namaMapel]
+  );
+  return rows[0]?.id_mapel || null;
+};
+
 const nextId = async (conn, table, pk) => {
   const [rows] = await conn.execute(
     `SELECT COALESCE(MAX(\`${pk}\`), 0) + 1 AS next_id FROM \`${table}\``
@@ -120,10 +128,10 @@ async function main() {
     // ─── Tutors ────────────────────────────────────────────────
     const tutors = [];
     const tutorData = [
-      { username: 'budi.setiawan', nama: 'Budi Setiawan', jenis_kelamin: 'L', no_hp: '081234567001' },
-      { username: 'ani.wijaya', nama: 'Ani Wijaya', jenis_kelamin: 'P', no_hp: '081234567002' },
-      { username: 'candra.putra', nama: 'Candra Putra', jenis_kelamin: 'L', no_hp: '081234567003' },
-      { username: 'dewi.lestari', nama: 'Dewi Lestari', jenis_kelamin: 'P', no_hp: '081234567004' },
+      { username: 'budi.setiawan', nama: 'Budi Setiawan', jenis_kelamin: 'L', no_hp: '081234567001', mapel: 'SD, SMP' },
+      { username: 'ani.wijaya', nama: 'Ani Wijaya', jenis_kelamin: 'P', no_hp: '081234567002', mapel: 'SMA, Bahasa Inggris' },
+      { username: 'candra.putra', nama: 'Candra Putra', jenis_kelamin: 'L', no_hp: '081234567003', mapel: 'MAFIA' },
+      { username: 'dewi.lestari', nama: 'Dewi Lestari', jenis_kelamin: 'P', no_hp: '081234567004', mapel: 'calistung, SD' },
     ];
 
     for (const t of tutorData) {
@@ -139,9 +147,9 @@ async function main() {
       if (!tutorId) {
         tutorId = await nextId(conn, 'tutor', 'id_tutor');
         await conn.execute(
-          `INSERT INTO tutor (id_tutor, id_user, nama_tutor, jenis_kelamin, no_hp, tanggal_bergabung, status)
-           VALUES (?, ?, ?, ?, ?, ?, 'Aktif')`,
-          [tutorId, userId, t.nama, t.jenis_kelamin, t.no_hp, toMySQLDate('2024-01-15')]
+          `INSERT INTO tutor (id_tutor, id_user, nama_tutor, jenis_kelamin, no_hp, tanggal_bergabung, status, mapel)
+           VALUES (?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
+          [tutorId, userId, t.nama, t.jenis_kelamin, t.no_hp, toMySQLDate('2024-01-15'), t.mapel]
         );
       }
       tutors.push({ id_tutor: tutorId, ...t });
@@ -151,18 +159,18 @@ async function main() {
     // ─── Siswa ─────────────────────────────────────────────────
     const siswa = [];
     const siswaData = [
-      { username: 'rizky.pratama', nama: 'Rizky Pratama', spp: 550000, no_hp_ortu: '081234500001' },
-      { username: 'siti.aminah', nama: 'Siti Aminah', spp: 300000, no_hp_ortu: '081234500002' },
-      { username: 'andi.saputra', nama: 'Andi Saputra', spp: 450000, no_hp_ortu: '081234500003' },
-      { username: 'aisyah.putri', nama: 'Aisyah Putri', spp: 400000, no_hp_ortu: '081234500004' },
-      { username: 'budi.santoso', nama: 'Budi Santoso', spp: 500000, no_hp_ortu: '081234500005' },
-      { username: 'citra.dewi', nama: 'Citra Dewi', spp: 350000, no_hp_ortu: '081234500006' },
-      { username: 'dimas.ari', nama: 'Dimas Ari', spp: 450000, no_hp_ortu: '081234500007' },
-      { username: 'eka.putri', nama: 'Eka Putri', spp: 500000, no_hp_ortu: '081234500008' },
-      { username: 'fajar.nugraha', nama: 'Fajar Nugraha', spp: 400000, no_hp_ortu: '081234500009' },
-      { username: 'gita.lestari', nama: 'Gita Lestari', spp: 350000, no_hp_ortu: '081234500010' },
-      { username: 'hendra.wijaya', nama: 'Hendra Wijaya', spp: 450000, no_hp_ortu: '081234500011' },
-      { username: 'intan.permata', nama: 'Intan Permata', spp: 500000, no_hp_ortu: '081234500012' },
+      { username: 'rizky.pratama', nama: 'Rizky Pratama', spp: 550000, no_hp_ortu: '081234500001', mapel: 'SMA, MAFIA' },
+      { username: 'siti.aminah', nama: 'Siti Aminah', spp: 300000, no_hp_ortu: '081234500002', mapel: 'SD, calistung' },
+      { username: 'andi.saputra', nama: 'Andi Saputra', spp: 450000, no_hp_ortu: '081234500003', mapel: 'SMP, Bahasa Inggris' },
+      { username: 'aisyah.putri', nama: 'Aisyah Putri', spp: 400000, no_hp_ortu: '081234500004', mapel: 'SMP' },
+      { username: 'budi.santoso', nama: 'Budi Santoso', spp: 500000, no_hp_ortu: '081234500005', mapel: 'SMA' },
+      { username: 'citra.dewi', nama: 'Citra Dewi', spp: 350000, no_hp_ortu: '081234500006', mapel: 'SD' },
+      { username: 'dimas.ari', nama: 'Dimas Ari', spp: 450000, no_hp_ortu: '081234500007', mapel: 'SMP, MAFIA' },
+      { username: 'eka.putri', nama: 'Eka Putri', spp: 500000, no_hp_ortu: '081234500008', mapel: 'SMA, Bahasa Inggris' },
+      { username: 'fajar.nugraha', nama: 'Fajar Nugraha', spp: 400000, no_hp_ortu: '081234500009', mapel: 'SMP' },
+      { username: 'gita.lestari', nama: 'Gita Lestari', spp: 350000, no_hp_ortu: '081234500010', mapel: 'SD, calistung' },
+      { username: 'hendra.wijaya', nama: 'Hendra Wijaya', spp: 450000, no_hp_ortu: '081234500011', mapel: 'SMP' },
+      { username: 'intan.permata', nama: 'Intan Permata', spp: 500000, no_hp_ortu: '081234500012', mapel: 'SMA, MAFIA' },
     ];
 
     for (const s of siswaData) {
@@ -178,39 +186,64 @@ async function main() {
       if (!siswaId) {
         siswaId = await nextId(conn, 'siswa', 'id_siswa');
         await conn.execute(
-          `INSERT INTO siswa (id_siswa, id_user, nama, spp, no_hp_ortu, tanggal_masuk, status)
-           VALUES (?, ?, ?, ?, ?, ?, 'Aktif')`,
-          [siswaId, userId, s.nama, s.spp, s.no_hp_ortu, toMySQLDate('2024-08-01')]
+          `INSERT INTO siswa (id_siswa, id_user, nama, spp, no_hp_ortu, tanggal_masuk, status, mapel)
+           VALUES (?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
+          [siswaId, userId, s.nama, s.spp, s.no_hp_ortu, toMySQLDate('2024-08-01'), s.mapel]
         );
       }
       siswa.push({ id_siswa: siswaId, ...s });
     }
     console.log(`✔ ${siswa.length} siswa`);
 
+    // ─── Mapel ────────────────────────────────────────────────
+    const mapelData = [
+      'SD',
+      'SMP',
+      'SMA',
+      'Bahasa Inggris',
+      'calistung',
+      'MAFIA',
+    ];
+
+    const mapel = [];
+    for (const namaMapel of mapelData) {
+      let mapelId = await findMapelId(conn, namaMapel);
+      if (!mapelId) {
+        mapelId = await nextId(conn, 'mapel', 'id_mapel');
+        await conn.execute(
+          'INSERT INTO mapel (id_mapel, nama_mapel) VALUES (?, ?)',
+          [mapelId, namaMapel]
+        );
+      }
+      mapel.push({ id_mapel: mapelId, nama_mapel: namaMapel });
+    }
+    console.log(`✔ ${mapel.length} mapel`);
+
     // ─── Kelas ─────────────────────────────────────────────────
     const kelas = [];
     const kelasData = [
-      { nama_kelas: 'Matematika A1', jenjang: 'SMA', id_tutor: tutors[0].id_tutor },
-      { nama_kelas: 'Bahasa Inggris B2', jenjang: 'SMA', id_tutor: tutors[1].id_tutor },
-      { nama_kelas: 'Fisika C1', jenjang: 'SMA', id_tutor: tutors[2].id_tutor },
-      { nama_kelas: 'Bahasa Indonesia D1', jenjang: 'SMP', id_tutor: tutors[3].id_tutor },
+      { nama_kelas: 'Matematika A1', nama_mapel: 'SMA', id_tutor: tutors[0].id_tutor },
+      { nama_kelas: 'Bahasa Inggris B2', nama_mapel: 'Bahasa Inggris', id_tutor: tutors[1].id_tutor },
+      { nama_kelas: 'Fisika C1', nama_mapel: 'MAFIA', id_tutor: tutors[2].id_tutor },
+      { nama_kelas: 'Bahasa Indonesia D1', nama_mapel: 'SMP', id_tutor: tutors[3].id_tutor },
     ];
 
     for (const k of kelasData) {
       let kelasId = await findKelasId(conn, k.nama_kelas);
+      const mapelId = await findMapelId(conn, k.nama_mapel);
       if (!kelasId) {
         kelasId = await nextId(conn, 'kelas', 'id_kelas');
         await conn.execute(
-          'INSERT INTO kelas (id_kelas, nama_kelas, jenjang, id_tutor) VALUES (?, ?, ?, ?)',
-          [kelasId, k.nama_kelas, k.jenjang, k.id_tutor]
+          'INSERT INTO kelas (id_kelas, nama_kelas, id_mapel, id_tutor) VALUES (?, ?, ?, ?)',
+          [kelasId, k.nama_kelas, mapelId, k.id_tutor]
         );
       } else {
         await conn.execute(
-          'UPDATE kelas SET jenjang = ?, id_tutor = ? WHERE id_kelas = ?',
-          [k.jenjang, k.id_tutor, kelasId]
+          'UPDATE kelas SET id_mapel = ?, id_tutor = ? WHERE id_kelas = ?',
+          [mapelId, k.id_tutor, kelasId]
         );
       }
-      kelas.push({ id_kelas: kelasId, ...k });
+      kelas.push({ id_kelas: kelasId, id_mapel: mapelId, ...k });
     }
     console.log(`✔ ${kelas.length} kelas`);
 
@@ -222,20 +255,20 @@ async function main() {
     await conn.execute('DELETE FROM jadwal');
 
     const jadwalData = [
-      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, hari: todayName, jam: '16:00:00' },
-      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, hari: todayName, jam: '17:00:00' },
-      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, hari: todayName, jam: '18:00:00' },
-      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, hari: 'Senin',  jam: '16:00:00' },
-      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, hari: 'Selasa', jam: '17:00:00' },
-      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, hari: 'Rabu',   jam: '18:00:00' },
-      { id_kelas: kelas[3].id_kelas, id_tutor: tutors[3].id_tutor, hari: 'Kamis',  jam: '19:00:00' },
+      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, id_mapel: kelas[0].id_mapel, hari: todayName, jam: '16:00:00' },
+      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, id_mapel: kelas[1].id_mapel, hari: todayName, jam: '17:00:00' },
+      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[2].id_mapel, hari: todayName, jam: '18:00:00' },
+      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, id_mapel: kelas[0].id_mapel, hari: 'Senin',  jam: '16:00:00' },
+      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, id_mapel: kelas[1].id_mapel, hari: 'Selasa', jam: '17:00:00' },
+      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[2].id_mapel, hari: 'Rabu',   jam: '18:00:00' },
+      { id_kelas: kelas[3].id_kelas, id_tutor: tutors[3].id_tutor, id_mapel: kelas[3].id_mapel, hari: 'Kamis',  jam: '19:00:00' },
     ];
 
     for (const j of jadwalData) {
       const idJadwal = await nextId(conn, 'jadwal', 'id_jadwal');
       await conn.execute(
-        'INSERT INTO jadwal (id_jadwal, id_kelas, id_tutor, hari, jam) VALUES (?, ?, ?, ?, ?)',
-        [idJadwal, j.id_kelas, j.id_tutor, j.hari, j.jam]
+        'INSERT INTO jadwal (id_jadwal, id_kelas, id_tutor, id_mapel, hari, jam) VALUES (?, ?, ?, ?, ?, ?)',
+        [idJadwal, j.id_kelas, j.id_tutor, j.id_mapel, j.hari, j.jam]
       );
     }
     console.log(`✔ jadwal seeded (hari ini: ${todayName})`);
@@ -267,7 +300,7 @@ async function main() {
     await conn.execute('DELETE FROM absensi_siswa WHERE tanggal = ?', [todayStr]);
 
     const [jadwalHariIniRows] = await conn.execute(
-      'SELECT id_jadwal, id_kelas FROM jadwal WHERE hari = ?',
+      'SELECT id_jadwal, id_kelas, id_mapel FROM jadwal WHERE hari = ?',
       [todayName]
     );
 
@@ -283,9 +316,9 @@ async function main() {
         const idAbs = await nextId(conn, 'absensi_siswa', 'id_absensi');
         await conn.execute(
           `INSERT INTO absensi_siswa
-            (id_absensi, id_siswa, id_jadwal, tanggal, pertemuan, status, is_confirmed)
-           VALUES (?, ?, ?, ?, 1, ?, 0)`,
-          [idAbs, ks.id_siswa, j.id_jadwal, todayStr, status]
+            (id_absensi, id_siswa, id_jadwal, tanggal, pertemuan, status, id_mapel, is_confirmed)
+           VALUES (?, ?, ?, ?, 1, ?, ?, 0)`,
+          [idAbs, ks.id_siswa, j.id_jadwal, todayStr, status, j.id_mapel]
         );
         absensiCount++;
       }

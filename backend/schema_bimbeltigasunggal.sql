@@ -1,6 +1,6 @@
 -- ============================================================
 --  Database: grand3sunggal
---  Versi    : 2.0
+--  Versi    : 2.1
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS grand3sunggal
@@ -31,7 +31,7 @@ CREATE TABLE siswa (
     tanggal_lahir   DATE,
     jenis_kelamin   VARCHAR(10),
     kelas           VARCHAR(20),
-    jenis_kelas     VARCHAR(50),              -- bisa multi-nilai: 'Bimbel SMP, English Course'
+    mapel           VARCHAR(255),             -- bisa multi-nilai: 'Bimbel SMP, English Course'
     asal_sekolah    VARCHAR(50),
     alamat          TEXT,
     tanggal_masuk   DATE,
@@ -59,22 +59,32 @@ CREATE TABLE tutor (
     no_hp              VARCHAR(15),
     tanggal_bergabung  DATE,
     status             ENUM('Aktif','Nonaktif') DEFAULT 'Aktif',
+    mapel              VARCHAR(255),          -- bisa multi-nilai: 'SD, SMP, SMA'
     FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE
 );
 
+-- 4. MAPEL
 -- ------------------------------------------------------------
--- 4. KELAS
+CREATE TABLE mapel (
+    id_mapel    INT           AUTO_INCREMENT PRIMARY KEY,
+    nama_mapel  VARCHAR(100)  NOT NULL,
+    UNIQUE KEY uq_mapel_nama (nama_mapel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- 5. KELAS
 -- ------------------------------------------------------------
 CREATE TABLE kelas (
     id_kelas    INT          AUTO_INCREMENT PRIMARY KEY,
     nama_kelas  VARCHAR(50)  NOT NULL,
-    jenjang     VARCHAR(20),                  -- 'SD' | 'SMP' | 'SMA' | 'Calistung' | 'Mafia'
+    id_mapel    INT          NOT NULL,
     id_tutor    INT,                          
+    FOREIGN KEY (id_mapel) REFERENCES mapel(id_mapel) ON UPDATE CASCADE ON DELETE RESTRICT,
     FOREIGN KEY (id_tutor) REFERENCES tutor(id_tutor) ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------
--- 5. KELAS_SISWA  (relasi many-to-many siswa ↔ kelas)
+-- 6. KELAS_SISWA  (relasi many-to-many siswa ↔ kelas)
 -- ------------------------------------------------------------
 CREATE TABLE kelas_siswa (
     id_kelas_siswa  INT  AUTO_INCREMENT PRIMARY KEY,
@@ -86,20 +96,22 @@ CREATE TABLE kelas_siswa (
 );
 
 -- ------------------------------------------------------------
--- 6. JADWAL
+-- 7. JADWAL
 -- ------------------------------------------------------------
 CREATE TABLE jadwal (
     id_jadwal   INT          AUTO_INCREMENT PRIMARY KEY,
     id_kelas    INT          NOT NULL,
     id_tutor    INT          NOT NULL,
+    id_mapel    INT          NOT NULL,
     hari        ENUM('Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu') NOT NULL,
     jam         TIME         NOT NULL,
     FOREIGN KEY (id_kelas)  REFERENCES kelas(id_kelas)  ON DELETE CASCADE,
-    FOREIGN KEY (id_tutor)  REFERENCES tutor(id_tutor)  ON DELETE CASCADE
+    FOREIGN KEY (id_tutor)  REFERENCES tutor(id_tutor)  ON DELETE CASCADE,
+    FOREIGN KEY (id_mapel)  REFERENCES mapel(id_mapel)  ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 -- ------------------------------------------------------------
--- 7. PEMBAYARAN
+-- 8. PEMBAYARAN
 -- ------------------------------------------------------------
 CREATE TABLE pembayaran (
     id_pembayaran      INT          AUTO_INCREMENT PRIMARY KEY,
@@ -117,7 +129,7 @@ CREATE TABLE pembayaran (
 );
 
 -- ------------------------------------------------------------
--- 8. ABSENSI_SISWA
+-- 9. ABSENSI_SISWA
 -- ------------------------------------------------------------
 CREATE TABLE absensi_siswa (
     id_absensi          INT          AUTO_INCREMENT PRIMARY KEY,
@@ -126,16 +138,17 @@ CREATE TABLE absensi_siswa (
     tanggal             DATE         NOT NULL,
     pertemuan          INT          DEFAULT 1,
     status              ENUM('Hadir','Tidak Hadir','Sakit','Izin') NOT NULL,  -- 'Hadir' | 'Tidak Hadir' | 'Sakit' | 'Izin'
-    topik_pembelajaran  TEXT,
+    id_mapel            INT,
     is_confirmed        TINYINT(1)   DEFAULT 0,  -- 0 = belum dikonfirmasi, 1 = sudah
     confirmed_at        DATE,
     confirmed_by        INT,
     FOREIGN KEY (id_siswa)  REFERENCES siswa(id_siswa)   ON DELETE CASCADE,
-    FOREIGN KEY (id_jadwal) REFERENCES jadwal(id_jadwal) ON DELETE CASCADE
+    FOREIGN KEY (id_jadwal) REFERENCES jadwal(id_jadwal) ON DELETE CASCADE,
+    FOREIGN KEY (id_mapel)  REFERENCES mapel(id_mapel)  ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------
--- 9. ABSENSI_TUTOR
+-- 10. ABSENSI_TUTOR
 -- ------------------------------------------------------------
 CREATE TABLE absensi_tutor (
     id_absensi_tutor  INT          AUTO_INCREMENT PRIMARY KEY,  
@@ -146,7 +159,7 @@ CREATE TABLE absensi_tutor (
 );
 
 -- ------------------------------------------------------------
--- 10. GAJI_TUTOR
+-- 11. GAJI_TUTOR
 --     total_pemasukan = 40% SPP seluruh siswa yang diajar
 --     potongan        = 5% per hari absen
 --     bonus           = infal (15.000/pertemuan) + kelas Inggris (12.500/pertemuan)

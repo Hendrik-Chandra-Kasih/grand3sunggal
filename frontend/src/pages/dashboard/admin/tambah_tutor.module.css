@@ -507,3 +507,46 @@
 .btnIcon {
   font-size: 1.05rem;
 }
+
+/* Chip-style multi-select inside form */
+.chipSelectGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chipSelect {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #444651;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.chipSelect:hover:not(:disabled) {
+  border-color: #00236f;
+  color: #00236f;
+}
+
+.chipSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chipSelectActive,
+.chipSelectActive:hover {
+  background-color: #00236f;
+  border-color: #00236f;
+  color: #ffffff;
+}
+
+.fieldHint {
+  font-size: 0.75rem;
+  color: #757682;
+  margin: 0;
+}

@@ -85,11 +85,14 @@ export const getDashboardStats = async (req, res) => {
            j.id_kelas,
            j.id_tutor,
            k.nama_kelas,
+           k.id_mapel,
+           m.nama_mapel,
            t.nama_tutor
          FROM absensi_siswa a
          INNER JOIN siswa s   ON s.id_siswa = a.id_siswa
          INNER JOIN jadwal j  ON j.id_jadwal = a.id_jadwal
          INNER JOIN kelas k   ON k.id_kelas = j.id_kelas
+         LEFT JOIN mapel m    ON m.id_mapel = k.id_mapel
          INNER JOIN tutor t   ON t.id_tutor = j.id_tutor
          WHERE a.tanggal BETWEEN ? AND ?
            AND a.is_confirmed = 0
@@ -122,6 +125,8 @@ export const getDashboardStats = async (req, res) => {
           id: key,
           id_kelas: key,
           nama_kelas: row.nama_kelas,
+          id_mapel: row.id_mapel,
+          nama_mapel: row.nama_mapel,
           nama_tutor: row.nama_tutor,
           id_tutor: row.id_tutor,
           hadir: 0,
@@ -181,10 +186,13 @@ export const getAbsensiHariIni = async (req, res) => {
          a.status,
          j.id_kelas,
          k.nama_kelas,
+         k.id_mapel,
+         m.nama_mapel,
          t.nama_tutor
        FROM absensi_siswa a
        INNER JOIN jadwal j ON j.id_jadwal = a.id_jadwal
        INNER JOIN kelas k  ON k.id_kelas  = j.id_kelas
+       LEFT JOIN mapel m   ON m.id_mapel = k.id_mapel
        INNER JOIN tutor t  ON t.id_tutor  = j.id_tutor
        WHERE a.tanggal BETWEEN ? AND ?
          AND a.is_confirmed = 0
@@ -199,6 +207,8 @@ export const getAbsensiHariIni = async (req, res) => {
         map.set(key, {
           id: key,
           nama_kelas: r.nama_kelas,
+          id_mapel: r.id_mapel,
+          nama_mapel: r.nama_mapel,
           nama_tutor: r.nama_tutor,
           hadir: 0,
           absen: 0,

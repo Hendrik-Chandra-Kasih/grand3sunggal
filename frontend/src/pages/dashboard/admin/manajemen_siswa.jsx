@@ -13,16 +13,6 @@ import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_siswa.module.css';
 
-// Opsi jenis_kelas (sama dengan yang dipakai di Pendaftaran Siswa)
-const JENIS_KELAS_OPTIONS = [
-  'Calistung',
-  'Bimbel SD',
-  'Bimbel SMP',
-  'Bimbel SMA',
-  'English Course',
-  'Mafia',
-];
-
 const STATUS_OPTIONS = [
   { value: 'Aktif', label: 'Aktif' },
   { value: 'Nonaktif', label: 'Nonaktif' },
@@ -55,7 +45,7 @@ const formatTanggalID = (value) => {
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 };
 
-const splitJenisKelas = (value) => {
+const splitMapel = (value) => {
   if (!value) return [];
   return String(value)
     .split(',')
@@ -69,7 +59,7 @@ const initialEditForm = {
   kelas: '',
   status: 'Aktif',
   spp: '',
-  jenis_kelas: [],
+  mapel: [],
 };
 
 const ManajemenSiswa = () => {
@@ -79,7 +69,8 @@ const ManajemenSiswa = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [jenisKelasFilter, setJenisKelasFilter] = useState('all');
+  const [mapelFilter, setMapelFilter] = useState('all');
+  const [mapelOptions, setMapelOptions] = useState([]);
 
   // Modal edit state
   const [editingSiswa, setEditingSiswa] = useState(null);
@@ -116,20 +107,33 @@ const ManajemenSiswa = () => {
     }
   }, []);
 
+  const fetchMapelOptions = useCallback(async () => {
+    try {
+      const response = await api.get('/mapel');
+      const data = Array.isArray(response.data?.data) ? response.data.data : [];
+      setMapelOptions(data);
+    } catch (err) {
+      console.error('Fetch mapel error:', err);
+      setMapelOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSiswa();
-  }, [fetchSiswa]);
+    fetchMapelOptions();
+  }, [fetchSiswa, fetchMapelOptions]);
 
-  // Daftar jenis_kelas unik yang muncul di data (untuk opsi filter dinamis)
-  const availableJenisKelas = useMemo(() => {
+  // Daftar mapel unik yang muncul di data (untuk opsi filter dinamis)
+  const availableMapel = useMemo(() => {
     const set = new Set();
     siswaList.forEach((s) => {
-      splitJenisKelas(s.jenis_kelas).forEach((jk) => set.add(jk));
+      splitMapel(s.mapel).forEach((m) => set.add(m));
     });
-    // Tambahkan opsi default agar filter tetap berguna walaupun data kosong
-    JENIS_KELAS_OPTIONS.forEach((opt) => set.add(opt));
+    mapelOptions.forEach((item) => {
+      if (item?.nama_mapel) set.add(item.nama_mapel);
+    });
     return Array.from(set);
-  }, [siswaList]);
+  }, [siswaList, mapelOptions]);
 
   // Hasil filter + search
   const filteredSiswa = useMemo(() => {
@@ -138,10 +142,10 @@ const ManajemenSiswa = () => {
       // Filter status
       if (statusFilter !== 'all' && s.status !== statusFilter) return false;
 
-      // Filter jenis_kelas
-      if (jenisKelasFilter !== 'all') {
-        const list = splitJenisKelas(s.jenis_kelas);
-        if (!list.includes(jenisKelasFilter)) return false;
+      // Filter mapel
+      if (mapelFilter !== 'all') {
+        const list = splitMapel(s.mapel);
+        if (!list.includes(mapelFilter)) return false;
       }
 
       // Search nama
@@ -150,7 +154,7 @@ const ManajemenSiswa = () => {
       }
       return true;
     });
-  }, [siswaList, search, statusFilter, jenisKelasFilter]);
+  }, [siswaList, search, statusFilter, mapelFilter]);
 
   // Statistik ringkas
   const stats = useMemo(() => {
@@ -169,7 +173,7 @@ const ManajemenSiswa = () => {
       kelas: siswa.kelas || '',
       status: siswa.status || 'Aktif',
       spp: formatNumericInput(siswa.spp ?? 0),
-      jenis_kelas: splitJenisKelas(siswa.jenis_kelas),
+      mapel: splitMapel(siswa.mapel),
     });
     setEditError(null);
   };
@@ -190,14 +194,14 @@ const ManajemenSiswa = () => {
     }
   };
 
-  const toggleJenisKelas = (value) => {
+  const toggleMapel = (value) => {
     setEditForm((prev) => {
-      const exists = prev.jenis_kelas.includes(value);
+      const exists = prev.mapel.includes(value);
       return {
         ...prev,
-        jenis_kelas: exists
-          ? prev.jenis_kelas.filter((v) => v !== value)
-          : [...prev.jenis_kelas, value],
+        mapel: exists
+          ? prev.mapel.filter((v) => v !== value)
+          : [...prev.mapel, value],
       };
     });
   };
@@ -206,8 +210,8 @@ const ManajemenSiswa = () => {
     event.preventDefault();
     if (!editingSiswa) return;
 
-    if (editForm.jenis_kelas.length === 0) {
-      setEditError('Pilih minimal satu jenis kelas.');
+    if (editForm.mapel.length === 0) {
+      setEditError('Pilih minimal satu mapel.');
       return;
     }
 
@@ -217,7 +221,7 @@ const ManajemenSiswa = () => {
       const payload = {
         status: editForm.status,
         spp: parseNumericInput(editForm.spp),
-        jenis_kelas: editForm.jenis_kelas.join(', '),
+        mapel: editForm.mapel.join(', '),
       };
       const response = await api.put(`/siswa/${editingSiswa.id_siswa}`, payload);
       const updated = response.data?.data;
@@ -248,7 +252,7 @@ const ManajemenSiswa = () => {
   const resetFilters = () => {
     setSearch('');
     setStatusFilter('all');
-    setJenisKelasFilter('all');
+    setMapelFilter('all');
   };
 
   return (
@@ -379,17 +383,17 @@ const ManajemenSiswa = () => {
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="jenisKelasFilter">
-            Jenis Kelas
+          <label className={styles.filterLabel} htmlFor="mapelFilter">
+            Mata Pelajaran
           </label>
           <select
-            id="jenisKelasFilter"
+            id="mapelFilter"
             className={styles.filterSelect}
-            value={jenisKelasFilter}
-            onChange={(e) => setJenisKelasFilter(e.target.value)}
+            value={mapelFilter}
+            onChange={(e) => setMapelFilter(e.target.value)}
           >
-            <option value="all">Semua Jenis Kelas</option>
-            {availableJenisKelas.map((opt) => (
+            <option value="all">Semua Mapel</option>
+            {availableMapel.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
               </option>
@@ -397,7 +401,7 @@ const ManajemenSiswa = () => {
           </select>
         </div>
 
-        {(search || statusFilter !== 'all' || jenisKelasFilter !== 'all') && (
+        {(search || statusFilter !== 'all' || mapelFilter !== 'all') && (
           <button
             type="button"
             className={styles.btnReset}
@@ -429,7 +433,7 @@ const ManajemenSiswa = () => {
                 <th style={{ width: '12%' }}>Kelas</th>
                 <th style={{ width: '10%' }}>Status</th>
                 <th style={{ width: '14%' }}>Tanggal Masuk</th>
-                <th style={{ width: '20%' }}>Jenis Kelas</th>
+                <th style={{ width: '20%' }}>Mata Pelajaran</th>
                 <th style={{ width: '12%' }}>SPP</th>
                 <th style={{ width: '8%', textAlign: 'center' }}>Aksi</th>
               </tr>
@@ -455,7 +459,7 @@ const ManajemenSiswa = () => {
 
               {!loading &&
                 filteredSiswa.map((siswa) => {
-                  const jenisKelasList = splitJenisKelas(siswa.jenis_kelas);
+                  const mapelList = splitMapel(siswa.mapel);
                   const statusClass =
                     siswa.status === 'Aktif'
                       ? styles.badgeSuccess
@@ -485,13 +489,13 @@ const ManajemenSiswa = () => {
                       </td>
                       <td>{formatTanggalID(siswa.tanggal_masuk)}</td>
                       <td>
-                        {jenisKelasList.length === 0 ? (
+                        {mapelList.length === 0 ? (
                           <span className={styles.muted}>—</span>
                         ) : (
                           <div className={styles.chipGroup}>
-                            {jenisKelasList.map((jk) => (
-                              <span key={jk} className={styles.chip}>
-                                {jk}
+                            {mapelList.map((m) => (
+                              <span key={m} className={styles.chip}>
+                                {m}
                               </span>
                             ))}
                           </div>
@@ -604,29 +608,29 @@ const ManajemenSiswa = () => {
                 </p>
               </div>
 
-              {/* Jenis kelas (multi-select chip) */}
+              {/* Mata Pelajaran (multi-select chip) */}
               <div className={styles.field}>
-                <label className={styles.label}>Jenis Kelas</label>
+                <label className={styles.label}>Mata Pelajaran</label>
                 <div className={styles.chipSelectGroup}>
-                  {JENIS_KELAS_OPTIONS.map((opt) => {
-                    const selected = editForm.jenis_kelas.includes(opt);
+                  {mapelOptions.map((opt) => {
+                    const selected = editForm.mapel.includes(opt.nama_mapel);
                     return (
                       <button
-                        key={opt}
+                        key={opt.id_mapel}
                         type="button"
                         className={`${styles.chipSelect} ${
                           selected ? styles.chipSelectActive : ''
                         }`}
-                        onClick={() => !saving && toggleJenisKelas(opt)}
+                        onClick={() => !saving && toggleMapel(opt.nama_mapel)}
                         disabled={saving}
                       >
-                        {opt}
+                        {opt.nama_mapel}
                       </button>
                     );
                   })}
                 </div>
                 <p className={styles.fieldHint}>
-                  Pilih satu atau lebih jenis kelas. Tersimpan sebagai daftar
+                  Pilih satu atau lebih mata pelajaran. Tersimpan sebagai daftar
                   dipisah koma.
                 </p>
               </div>

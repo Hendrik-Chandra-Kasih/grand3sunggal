@@ -329,7 +329,7 @@ const PendaftaranSiswa = () => {
         tanggal_lahir: formData.tanggalLahir || null,
         jenis_kelamin: formData.jenisKelamin || null,
         kelas: formData.kelas,
-        jenis_kelas: formData.jenisProgram.join(', ') || null,
+        mapel: formData.jenisProgram.join(', ') || null,
         asal_sekolah: formData.asalSekolah || null,
         alamat: formData.alamatLengkap || null,
         tanggal_masuk: formData.tanggalMasuk || null,

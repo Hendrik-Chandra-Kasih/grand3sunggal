@@ -33,11 +33,19 @@ export const getKelasById = async (req, res) => {
 // POST /api/kelas
 export const createKelas = async (req, res) => {
   try {
-    const { nama_kelas } = req.body;
+    const { nama_kelas, id_mapel } = req.body;
     if (!nama_kelas) {
       return res.status(400).json({ success: false, message: 'nama_kelas wajib diisi' });
     }
-    const kelas = await kelasRepository.create(req.body);
+    if (!id_mapel || Number.isNaN(Number(id_mapel))) {
+      return res.status(400).json({ success: false, message: 'id_mapel wajib diisi' });
+    }
+    const payload = {
+      ...req.body,
+      id_mapel: Number(id_mapel),
+      id_tutor: req.body.id_tutor ? Number(req.body.id_tutor) : null,
+    };
+    const kelas = await kelasRepository.create(payload);
     res.status(201).json({ success: true, message: 'Kelas berhasil ditambahkan', data: kelas });
   } catch (error) {
     handleError(res, error);
@@ -47,7 +55,18 @@ export const createKelas = async (req, res) => {
 // PUT /api/kelas/:id
 export const updateKelas = async (req, res) => {
   try {
-    const kelas = await kelasRepository.update(parseInt(req.params.id, 10), req.body);
+    const payload = { ...req.body };
+    if (payload.id_mapel !== undefined) {
+      if (!payload.id_mapel || Number.isNaN(Number(payload.id_mapel))) {
+        return res.status(400).json({ success: false, message: 'id_mapel tidak valid' });
+      }
+      payload.id_mapel = Number(payload.id_mapel);
+    }
+    if (payload.id_tutor !== undefined) {
+      payload.id_tutor = payload.id_tutor ? Number(payload.id_tutor) : null;
+    }
+
+    const kelas = await kelasRepository.update(parseInt(req.params.id, 10), payload);
     res.json({ success: true, message: 'Kelas berhasil diperbarui', data: kelas });
   } catch (error) {
     if (error.code === 'P2025') {
