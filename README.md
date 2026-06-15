@@ -234,6 +234,75 @@ File migrasi yang tersedia:
 | `003_add_topik_to_absensi_siswa.sql` | Kolom topik di absensi siswa |
 | `004_change_siswa_mapel_to_json.sql` | Ubah tipe kolom mapel ke JSON |
 | `005_change_gaji_tutor_periode_to_datetime.sql` | Ubah tipe periode gaji ke DATETIME |
+| `006_add_infal_module.sql` | Tabel infal (tutor pengganti) |
+| `007_add_jam_selesai_to_jadwal.sql` | Kolom `jam_selesai` di tabel jadwal |
+| `008_create_bonus_tutor_table.sql` | Tabel `bonus_tutor` untuk assignment bonus manual oleh owner |
+
+---
+
+## Perubahan & Penambahan Fitur (Sprint)
+
+### Dashboard Siswa (`/siswa/dashboard`)
+Halaman baru yang muncul saat siswa login. Menampilkan ringkasan:
+- **4 Stat Cards**: Jadwal Hari Ini, % Kehadiran, Status Pembayaran, Jumlah Mapel
+- **Bottom Cards**: Tabel jadwal hari ini + rekap absensi per mapel (mirip tutor)
+- Navigasi sidebar: **Dashboard** → Profile → Jadwal Les → Absensi → Pembayaran
+
+### Rekap Absensi Siswa (`/siswa/rekap-absensi`)
+Halaman baru yang meniru gaya rekap absensi tutor, tetapi per jadwal:
+- **Global Stats**: Total Hadir, Total Alpha, % Kehadiran
+- **Per-Jadwal Cards**: Header (Mapel + Hari + Jam) → Mini Stats → Mini Calendar (grid mingguan)
+- **Detail Table**: Tabel tanggal + status untuk jadwal yang dipilih (klik card untuk ganti)
+- Filter: pemilihan bulan dan tahun
+- API: `GET /absensi-siswa/recap/me?bulan=&tahun=`
+
+### Restyling Card Jadwal Siswa
+Card jadwal di `/siswa/jadwal` diubah menjadi lebih minimalis:
+- **Top Row**: Jam (mulai-selesai) di kiri, badge sesi di kanan
+- **Header**: Nama mapel dengan icon
+- **Body**: Hanya informasi tutor dan ruangan (jam, mapel, sesi dipindah ke header)
+- **Tab navigasi**: "Hari Ini" / "Semua Jadwal"
+
+### Sistem Bonus Owner (Manual Assignment)
+**Perubahan besar**: Dari sistem auto-bonus (scan semua tutor) menjadi manual assignment:
+
+| Sebelum | Sesudah |
+|---------|---------|
+| Bonus otomatis untuk semua tutor yang memenuhi syarat absen | Owner pilih manual tutor yang berhak mendapat bonus |
+| Setting `bonus_kehadiran_enabled` dan `bonus_kehadiran_maks_absen` | Setting dihapus, hanya `bonus_kehadiran_nominal` tersisa |
+| Perhitungan di `hitungGaji()` | Dibaca dari tabel `bonus_tutor` |
+
+**Cara kerja baru:**
+1. Owner buka **Kelola Gaji** → lihat daftar tutor
+2. **Toggle ON/OFF** untuk tutor yang berhak bonus
+3. Klik **Kirim** → otomatis simpan bonus assignment (`POST /gaji/bonus`) + kirim gaji (`POST /gaji/send`) dalam satu klik
+4. **Total Neto** dihitung lokal (real-time sesuai toggle), bukan baca dari database
+
+**Backend:**
+- `bonus_tutor` table: `id_tutor, bulan, tahun, nominal` (UNIQUE constraint)
+- `POST /api/gaji/bonus` → upsert per tutor (tidak hapus semua)
+- `GET /api/gaji/bonus` → ambil bonus assignments per periode
+- `hitungGaji()` → baca dari `bonus_tutor` bukan dari settings
+
+### Input Absensi Tutor — Disederhanakan
+Radio button di halaman absensi tutor hanya dua opsi: **Hadir** dan **Tidak Hadir** (Sakit & Izin dihapus).
+
+### Fix Dashboard Admin — Absensi Belum Dikonfirmasi
+Query card "Absensi Belum Dikonfirmasi" di-scope ke hari ini saja (sebelumnya menghitung seluruh waktu).
+
+### Logo Baru
+Logo `logogrand.png` ditambahkan di:
+- **Sidebar** semua role (Admin, Tutor, Siswa, Owner) — menggantikan icon `MdSchool`
+- **Halaman Login** — di samping kiri tulisan "Grand 3 Sunggal"
+- **Header Home** — di samping kiri tulisan "Grand 3 Sunggal"
+
+### Fix Mapel Siswa
+`siswa.mapel` adalah JSON array of IDs. Sekarang di-resolve ke nama mapel:
+- Helper `getMapelNames()` mem-parse JSON dan lookup ke tabel `mapel` via API `GET /api/mapel`
+- Diterapkan di halaman **Pembayaran** dan **Profile** siswa
+
+### Fix Infal Tutor — Sidebar Admin
+Halaman `/admin/infal-tutor` dibungkus dengan `AdminLayout` sehingga sidebar admin muncul.
 
 ---
 
@@ -335,6 +404,7 @@ Data yang dihasilkan meliputi:
 | POST   | `/api/absensi-siswa`                            | ✓    | Input absensi siswa                  |
 | POST   | `/api/absensi-siswa/bulk`                       | ✓    | Input absensi siswa massal           |
 | GET    | `/api/absensi-siswa`                            | ✓    | Riwayat absensi siswa                |
+| GET    | `/api/absensi-siswa/recap/me`                   | ✓    | Rekap absensi per jadwal (siswa login) |
 | GET    | `/api/absensi-siswa/:id`                        | ✓    | Detail absensi siswa                 |
 | PUT    | `/api/absensi-siswa/:id`                        | ✓    | Update absensi siswa                 |
 | PATCH  | `/api/absensi-siswa/:id/confirm`                | ✓    | Konfirmasi absensi siswa             |
@@ -358,7 +428,10 @@ Data yang dihasilkan meliputi:
 | DELETE | `/api/pembayaran/:id`                 | ✓    | Hapus pembayaran                      |
 | GET    | `/api/pembayaran/tunggakan/:id_siswa` | ✓    | Hitung tunggakan SPP siswa            |
 | GET    | `/api/gaji/perhitungan`               | ✓    | Perhitungan gaji tutor                |
+| GET    | `/api/gaji/perhitungan/:id_tutor`     | ✓    | Perhitungan gaji per tutor            |
 | GET    | `/api/gaji/all`                       | ✓    | Semua data gaji                       |
+| GET    | `/api/gaji/bonus`                     | ✓    | Bonus assignments per periode         |
+| POST   | `/api/gaji/bonus`                     | ✓    | Simpan bonus assignment (upsert)      |
 | POST   | `/api/gaji/send`                      | ✓    | Kirim/simpan gaji tutor               |
 | GET    | `/api/keuangan/rekap`                 | ✓    | Rekap keuangan bulanan                |
 | GET    | `/api/keuangan/tahunan`               | ✓    | Laporan keuangan tahunan              |
