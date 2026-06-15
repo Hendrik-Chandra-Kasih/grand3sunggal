@@ -1,22 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import {
-  MdSchool,
   MdPerson,
   MdCalendarMonth,
-  MdAttachMoney,
+  MdPayments,
+  MdDashboard,
+  MdHowToReg,
+  MdSchool,
   MdLogout,
 } from 'react-icons/md';
 import styles from './StudentLayout.module.css';
 
 const NAV_ITEMS = [
-  { label: 'Profile Kehadiran', icon: MdPerson, to: '/siswa/profile' },
+  { label: 'Dashboard', icon: MdDashboard, to: '/siswa/dashboard' },
+  { label: 'Profile', icon: MdPerson, to: '/siswa/profile' },
   { label: 'Jadwal Les', icon: MdCalendarMonth, to: '/siswa/jadwal' },
-  { label: 'Pembayaran', icon: MdAttachMoney, to: '/siswa/pembayaran' },
+  { label: 'Absensi', icon: MdHowToReg, to: '/siswa/rekap-absensi' },
+  { label: 'Pembayaran', icon: MdPayments, to: '/siswa/pembayaran' },
 ];
 
 function StudentLayout({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -29,6 +34,15 @@ function StudentLayout({ children }) {
       }
     }
   }, []);
+
+  const getPageTitle = () => {
+    if (location.pathname.includes('dashboard')) return 'Dashboard';
+    if (location.pathname.includes('profile')) return 'Profile';
+    if (location.pathname.includes('jadwal')) return 'Jadwal Les';
+    if (location.pathname.includes('rekap-absensi')) return 'Rekap Absensi';
+    if (location.pathname.includes('pembayaran')) return 'Pembayaran';
+    return 'Siswa';
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -84,7 +98,7 @@ function StudentLayout({ children }) {
       <main className={styles.main}>
         {/* Header */}
         <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>Siswa</h1>
+          <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
           <div className={styles.userBlock}>
             <div className={styles.userInfo}>
               <p className={styles.userName}>{user?.nama || 'Siswa'}</p>

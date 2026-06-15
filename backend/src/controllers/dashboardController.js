@@ -66,7 +66,8 @@ export const getDashboardStats = async (req, res) => {
         [todayName]
       ),
       queryScalar(
-        `SELECT COUNT(*) AS c FROM absensi_siswa WHERE is_confirmed = 0`
+        `SELECT COUNT(*) AS c FROM absensi_siswa WHERE is_confirmed = 0 AND tanggal BETWEEN ? AND ?`,
+        [dayStart, dayEnd]
       ),
       queryScalar(
         `SELECT COUNT(*) AS c FROM pembayaran WHERE status = ?`,

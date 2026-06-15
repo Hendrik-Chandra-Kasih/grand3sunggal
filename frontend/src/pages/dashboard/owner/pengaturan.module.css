@@ -1,0 +1,54 @@
+.container { display: flex; flex-direction: column; gap: 20px; max-width: 720px; }
+
+.loadingState, .successAlert, .errorAlert {
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); font-size: .938rem;
+}
+.loadingState { color: #64748b; }
+.errorAlert { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
+.successAlert { color: #16a34a; background: #f0fdf4; border-color: #bbf7d0; }
+
+.card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); overflow: hidden; }
+.cardHeader { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
+.cardTitle { margin: 0; font-size: 1.125rem; font-weight: 600; color: #1e293b; }
+.cardSubtitle { margin: 4px 0 0; font-size: .813rem; color: #64748b; }
+.cardBody { padding: 8px 24px; }
+.cardFooter { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; }
+
+.settingRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid #f1f5f9;
+}
+.settingRow:last-child { border-bottom: none; }
+.settingInfo { display: flex; flex-direction: column; gap: 2px; }
+.settingLabel { font-size: .875rem; font-weight: 600; color: #1e293b; }
+.settingDesc { font-size: .75rem; color: #64748b; }
+.settingInput { flex-shrink: 0; }
+
+.numberInput {
+  width: 120px; padding: 8px 12px; font-size: .875rem; color: #1e293b;
+  border: 1px solid #cbd5e1; border-radius: 8px; outline: none; text-align: right;
+}
+.numberInput:focus { border-color: #1e40af; box-shadow: 0 0 0 2px rgba(30,64,175,.15); }
+
+.toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.toggle input { display: none; }
+.toggleSlider {
+  position: relative; width: 44px; height: 24px; background: #cbd5e1;
+  border-radius: 12px; transition: background .2s;
+}
+.toggleSlider::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+  background: #fff; border-radius: 50%; transition: transform .2s;
+}
+.toggle input:checked + .toggleSlider { background: #16a34a; }
+.toggle input:checked + .toggleSlider::after { transform: translateX(20px); }
+.toggleLabel { font-size: .813rem; font-weight: 500; color: #475569; min-width: 60px; }
+
+.saveBtn {
+  padding: 10px 24px; font-size: .875rem; font-weight: 600; color: #fff;
+  background: #1e40af; border: none; border-radius: 8px; cursor: pointer; transition: background .15s;
+}
+.saveBtn:hover { background: #1e3a8a; }
+.saveBtn:disabled { opacity: .6; cursor: not-allowed; }

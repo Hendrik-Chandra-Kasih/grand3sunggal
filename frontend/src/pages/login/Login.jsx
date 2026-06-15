@@ -35,14 +35,14 @@ const Login = () => {
             navigate('/admin/dashboard');
             break;
           case 'tutor':
-            navigate('/tutor');
+            navigate('/tutor/dashboard');
             break;
           case 'siswa':
-            navigate('/siswa/profile');
+            navigate('/siswa/dashboard');
             break;
           case 'pemilik':
-            navigate('/owner/laporan-keuangan');
-            break;
+          navigate('/owner/dashboard');
+          break;
           default:
             navigate('/');
         }

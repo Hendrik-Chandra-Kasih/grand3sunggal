@@ -102,6 +102,41 @@
   white-space: nowrap;
 }
 
+/* ─── Bonus Toggle ────────────────────── */
+.bonusToggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.bonusCheckbox { display: none; }
+.bonusToggleSwitch {
+  position: relative;
+  width: 36px; height: 20px;
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.bonusToggleSwitch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.bonusCheckbox:checked + .bonusToggleSwitch { background: #16a34a; }
+.bonusCheckbox:checked + .bonusToggleSwitch::after { transform: translateX(16px); }
+.bonusNominal {
+  font-size: .688rem;
+  font-weight: 600;
+  color: #16a34a;
+  line-height: 1.2;
+}
+
 .colCenter {
   text-align: center;
 }

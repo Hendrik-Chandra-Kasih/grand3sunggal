@@ -55,15 +55,27 @@ export const getJadwalById = async (req, res) => {
 
 export const createJadwal = async (req, res) => {
   try {
-    const { id_kelas, id_tutor, id_mapel, hari, jam } = req.body;
+    const { id_kelas, id_tutor, id_mapel, hari, jam, jam_selesai } = req.body;
     if (!id_kelas || !id_tutor || !id_mapel || !hari || !jam) {
       return res.status(400).json({ success: false, message: 'id_kelas, id_tutor, id_mapel, hari, jam wajib diisi' });
     }
+
+    // Validasi: jam_selesai harus setelah jam mulai
+    if (jam_selesai) {
+      if (jam_selesai <= jam) {
+        return res.status(400).json({
+          success: false,
+          message: 'Jam selesai harus lebih besar dari jam mulai',
+        });
+      }
+    }
+
     const payload = {
       ...req.body,
       id_kelas: parseInt(id_kelas, 10),
       id_tutor: parseInt(id_tutor, 10),
       id_mapel: parseInt(id_mapel, 10),
+      jam_selesai: jam_selesai || null,
     };
     const jadwal = await jadwalRepository.create(payload);
     res.status(201).json({ success: true, message: 'Jadwal berhasil ditambahkan', data: jadwal });
@@ -79,6 +91,17 @@ export const updateJadwal = async (req, res) => {
     if (payload.id_tutor) payload.id_tutor = parseInt(payload.id_tutor, 10);
     if (payload.id_mapel) payload.id_mapel = parseInt(payload.id_mapel, 10);
 
+    // Validasi jam_selesai
+    if (payload.jam_selesai) {
+      const jamMulai = payload.jam || (await getJamMulai(req.params.id));
+      if (payload.jam_selesai <= jamMulai) {
+        return res.status(400).json({
+          success: false,
+          message: 'Jam selesai harus lebih besar dari jam mulai',
+        });
+      }
+    }
+
     const jadwal = await jadwalRepository.update(parseInt(req.params.id, 10), payload);
     res.json({ success: true, message: 'Jadwal berhasil diperbarui', data: jadwal });
   } catch (error) {
@@ -88,6 +111,17 @@ export const updateJadwal = async (req, res) => {
     handleError(res, error);
   }
 };
+
+// Helper untuk ambil jam mulai saat edit
+async function getJamMulai(id_jadwal) {
+  try {
+    const { queryOne } = await import('../config/query.js');
+    const row = await queryOne('SELECT jam FROM jadwal WHERE id_jadwal = ?', [parseInt(id_jadwal, 10)]);
+    return row?.jam || null;
+  } catch {
+    return null;
+  }
+}
 
 export const deleteJadwal = async (req, res) => {
   try {

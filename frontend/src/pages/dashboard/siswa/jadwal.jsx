@@ -20,11 +20,18 @@ const DAY_MAP = {
   6: 'Sabtu',
 };
 
+const formatJam = (jam) => {
+  if (!jam) return '-';
+  return jam.slice(0, 5);
+};
+
 const Jadwal = () => {
   const [jadwalList, setJadwalList] = useState([]);
+  const [allJadwal, setAllJadwal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [todayName, setTodayName] = useState('');
+  const [tab, setTab] = useState('hari-ini'); // 'hari-ini' | 'semua'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,25 +55,21 @@ const Jadwal = () => {
         }
 
         const jadwalRes = await api.get(`/jadwal/siswa/${siswa.id_siswa}`);
-        const allJadwal = jadwalRes.data?.data || [];
+        const all = jadwalRes.data?.data || [];
 
         const todayIdx = new Date().getDay();
         const todayStr = DAY_MAP[todayIdx];
         setTodayName(todayStr);
 
-        const todayJadwal = allJadwal
+        const todayJadwal = all
           .filter((j) => j.hari === todayStr)
           .sort((a, b) => (a.jam > b.jam ? 1 : -1));
 
-        const withSesi = todayJadwal.map((j, idx) => ({
-          ...j,
-          sesi: idx + 1,
-        }));
-
-        setJadwalList(withSesi);
+        setAllJadwal(all);
+        setJadwalList(todayJadwal);
       } catch (err) {
         console.error('Gagal memuat jadwal:', err);
-        setError(err.response?.data?.message || 'Gagal memuat data jadwal');
+        setError('Gagal memuat data jadwal');
       } finally {
         setLoading(false);
       }
@@ -75,116 +78,96 @@ const Jadwal = () => {
     fetchData();
   }, []);
 
-  const formatJam = (jam) => {
-    if (!jam) return '-';
-    const parts = jam.split(':');
-    return `${parts[0]}:${parts[1]}`;
+  const switchToToday = () => {
+    setTab('hari-ini');
+    const todayStr = DAY_MAP[new Date().getDay()];
+    const filtered = allJadwal
+      .filter((j) => j.hari === todayStr)
+      .sort((a, b) => (a.jam > b.jam ? 1 : -1));
+    setJadwalList(filtered);
+  };
+
+  const switchToAll = () => {
+    setTab('semua');
+    const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const sorted = [...allJadwal].sort(
+      (a, b) => dayOrder.indexOf(a.hari) - dayOrder.indexOf(b.hari) || (a.jam > b.jam ? 1 : -1)
+    );
+    setJadwalList(sorted);
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.headerSection}>
-          <h1 className={styles.pageTitle}>Jadwal Les</h1>
-          <p className={styles.pageSubtitle}>Jadwal les hari ini</p>
-        </div>
-        <div className={styles.loadingState}>Memuat data jadwal...</div>
-      </div>
-    );
+    return <div className={styles.container}>Memuat jadwal...</div>;
   }
 
   if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.headerSection}>
-          <h1 className={styles.pageTitle}>Jadwal Les</h1>
-          <p className={styles.pageSubtitle}>Jadwal les hari ini</p>
-        </div>
-        <div className={styles.errorState}>{error}</div>
-      </div>
-    );
+    return <div className={styles.container}>{error}</div>;
+  }
+
+  if (allJadwal.length === 0) {
+    return <div className={styles.container}>Belum ada jadwal.</div>;
   }
 
   return (
     <div className={styles.container}>
-      <div className={styles.headerSection}>
-        <h1 className={styles.pageTitle}>Jadwal Les</h1>
-        <p className={styles.pageSubtitle}>Jadwal les hari ini</p>
+      {}
+      <div className={styles.headerRow}>
+        <div className={styles.tabs}>
+          <button
+            className={`${styles.tab} ${tab === 'hari-ini' ? styles.tabActive : ''}`}
+            onClick={switchToToday}
+          >
+            <MdToday /> Hari Ini ({todayName})
+          </button>
+          <button
+            className={`${styles.tab} ${tab === 'semua' ? styles.tabActive : ''}`}
+            onClick={switchToAll}
+          >
+            <MdSchool /> Semua Jadwal
+          </button>
+        </div>
+        <span className={styles.countBadge}>{jadwalList.length} jadwal</span>
       </div>
 
       {}
-      <div className={styles.todayBadge}>
-        <MdToday className={styles.todayBadgeIcon} />
-        <span>Hari {todayName}</span>
-      </div>
+      <div className={styles.cardGrid}>
+        {jadwalList.map((jadwal) => (
+          <div key={jadwal.id_jadwal} className={styles.card}>
+            {}
+            <div className={styles.cardTopRow}>
+              <span className={styles.clockGroup}>
+                <MdAccessTime className={styles.clockIcon} />
+                {formatJam(jadwal.jam)}
+                {jadwal.jam_selesai ? ` - ${formatJam(jadwal.jam_selesai)}` : ''}
+              </span>const derivedBonus = isBonusActive ? bonusNominalSetting : Number(row.bonus || 0);const derivedBonus = isBonusActive ? bonusNominalSetting : Number(row.bonus || 0);const derivedBonus = isBonusActive ? bonusNominalSetting : Number(row.bonus || 0);const derivedBonus = isBonusActive ? bonusNominalSetting : Number(row.bonus || 0);
+            </div>
 
-      {jadwalList.length === 0 ? (
-        <div className={styles.noSchedule}>
-          <MdSchool className={styles.noScheduleIcon} />
-          <p className={styles.noScheduleText}>Tidak ada jadwal les hari ini</p>
-          <p className={styles.noScheduleSubtext}>Nikmati waktu istirahat Anda!</p>
-        </div>
-      ) : (
-        <div className={styles.cardGrid}>
-          {jadwalList.map((jadwal) => (
-            <div key={jadwal.id_jadwal} className={styles.scheduleCard}>
-              <div className={styles.cardTop}>
-                <div className={styles.cardTime}>
-                  <span className={styles.cardTimeValue}>
-                    {formatJam(jadwal.jam)}
-                  </span>
-                  <span className={styles.cardTimeLabel}>WIB</span>
-                </div>
-                <div className={styles.cardMapel}>
-                  <h3 className={styles.cardMapelName}>
-                    {jadwal.nama_mapel || '-'}
-                  </h3>
-                  <span className={styles.cardSesi}>
-                    <MdLooksOne /> Sesi {jadwal.sesi}
-                  </span>
-                </div>
+            {}
+            <div className={styles.cardHeader}>
+              <MdSchool className={styles.cardHeaderIcon} />
+              <span className={styles.cardMapel}>{jadwal.nama_mapel || '-'}</span>
+            </div>
+
+            {}
+            <div className={styles.cardBody}>
+              <div className={styles.cardInfoRow}>
+                <MdPerson className={styles.cardInfoIcon} />
+                <span className={styles.cardInfoLabel}>Tutor</span>
+                <span className={styles.cardInfoValue}>
+                  {jadwal.nama_tutor || '-'}
+                </span>
               </div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardInfoRow}>
-                  <MdAccessTime className={styles.cardInfoIcon} />
-                  <span className={styles.cardInfoLabel}>Jam Mulai</span>
-                  <span className={styles.cardInfoValue}>
-                    {formatJam(jadwal.jam)} WIB
-                  </span>
-                </div>
-                <div className={styles.cardInfoRow}>
-                  <MdSchool className={styles.cardInfoIcon} />
-                  <span className={styles.cardInfoLabel}>Mapel</span>
-                  <span className={styles.cardInfoValue}>
-                    {jadwal.nama_mapel || '-'}
-                  </span>
-                </div>
-                <div className={styles.cardInfoRow}>
-                  <MdLooksOne className={styles.cardInfoIcon} />
-                  <span className={styles.cardInfoLabel}>Sesi</span>
-                  <span className={styles.cardInfoValue}>
-                    Sesi {jadwal.sesi}
-                  </span>
-                </div>
-                <div className={styles.cardInfoRow}>
-                  <MdPerson className={styles.cardInfoIcon} />
-                  <span className={styles.cardInfoLabel}>Tutor</span>
-                  <span className={styles.cardInfoValue}>
-                    {jadwal.nama_tutor || '-'}
-                  </span>
-                </div>
-                <div className={styles.cardInfoRow}>
-                  <MdRoom className={styles.cardInfoIcon} />
-                  <span className={styles.cardInfoLabel}>Ruangan</span>
-                  <span className={styles.cardInfoValue}>
-                    {jadwal.nama_kelas || '-'}
-                  </span>
-                </div>
+              <div className={styles.cardInfoRow}>
+                <MdRoom className={styles.cardInfoIcon} />
+                <span className={styles.cardInfoLabel}>Ruangan</span>
+                <span className={styles.cardInfoValue}>
+                  {jadwal.nama_kelas || '-'}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

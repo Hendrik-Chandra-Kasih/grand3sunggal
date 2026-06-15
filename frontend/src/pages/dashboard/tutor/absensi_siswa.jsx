@@ -10,7 +10,7 @@ import {
 import api from '../../../services/api';
 import styles from './absensi_siswa.module.css';
 
-const STATUS_OPTIONS = ['Hadir', 'Tidak Hadir', 'Sakit', 'Izin'];
+const STATUS_OPTIONS = ['Hadir', 'Tidak Hadir'];
 
 const AbsensiSiswa = () => {
   const { id_jadwal } = useParams();

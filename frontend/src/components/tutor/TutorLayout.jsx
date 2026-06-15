@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import {
   MdSchool,
+  MdDashboard,
   MdPerson,
   MdCalendarMonth,
   MdHowToReg,
@@ -11,6 +12,7 @@ import {
 import styles from './TutorLayout.module.css';
 
 const NAV_ITEMS = [
+  { label: 'Dashboard', icon: MdDashboard, to: '/tutor/dashboard' },
   { label: 'Profile', icon: MdPerson, to: '/tutor/profile' },
   { label: 'Jadwal Mengajar', icon: MdCalendarMonth, to: '/tutor/jadwal-mengajar' },
   { label: 'Kehadiran', icon: MdHowToReg, to: '/tutor/kehadiran' },
@@ -19,6 +21,7 @@ const NAV_ITEMS = [
 
 function TutorLayout({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -31,6 +34,15 @@ function TutorLayout({ children }) {
       }
     }
   }, []);
+
+  const getPageTitle = () => {
+    if (location.pathname.includes('dashboard')) return 'Dashboard';
+    if (location.pathname.includes('profile')) return 'Profile';
+    if (location.pathname.includes('jadwal-mengajar')) return 'Jadwal Mengajar';
+    if (location.pathname.includes('kehadiran')) return 'Kehadiran';
+    if (location.pathname.includes('gaji')) return 'Gaji';
+    return 'Tutor';
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -86,7 +98,7 @@ function TutorLayout({ children }) {
       <main className={styles.main}>
         {/* Header */}
         <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>Tutor</h1>
+          <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
           <div className={styles.userBlock}>
             <div className={styles.userInfo}>
               <p className={styles.userName}>{user?.nama || 'Tutor'}</p>

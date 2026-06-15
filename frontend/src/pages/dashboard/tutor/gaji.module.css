@@ -301,6 +301,15 @@
   line-height: 1.2;
 }
 
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 /* ─── Adjustment Items ─────────────────────────────────── */
 .adjustmentList {
   display: flex;
@@ -346,6 +355,13 @@
   font-size: 0.938rem;
   font-weight: 600;
   color: #dc2626;
+  white-space: nowrap;
+}
+
+.adjustmentPurple {
+  font-size: 0.938rem;
+  font-weight: 600;
+  color: #8b5cf6;
   white-space: nowrap;
 }
 

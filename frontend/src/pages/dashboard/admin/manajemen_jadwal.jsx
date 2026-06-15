@@ -35,16 +35,17 @@ const minuteOptions = Array.from({ length: 60 }, (_, i) => {
 });
 
 const createInitialForm = () => ({
-  id_jadwal: null,
-  hari: '',
-  jam: '',
-  id_kelas: '',
-  nama_kelas: '',
-  id_mapel: '',
-  nama_mapel: '',
-  id_tutor: '',
-  nama_tutor: '',
-});
+    id_jadwal: null,
+    hari: '',
+    jam: '',
+    jam_selesai: '',
+    id_kelas: '',
+    nama_kelas: '',
+    id_mapel: '',
+    nama_mapel: '',
+    id_tutor: '',
+    nama_tutor: '',
+  });
 
 const ManajemenJadwal = () => {
   const [scheduleList, setScheduleList] = useState([]);
@@ -65,6 +66,8 @@ const ManajemenJadwal = () => {
   const [editForm, setEditForm] = useState(createInitialForm());
   const [editJam, setEditJam] = useState('');
   const [editMenit, setEditMenit] = useState('');
+  const [editJamAkhir, setEditJamAkhir] = useState('');
+  const [editMenitAkhir, setEditMenitAkhir] = useState('');
   const [editError, setEditError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -148,16 +151,20 @@ const ManajemenJadwal = () => {
     setEditForm(createInitialForm());
     setEditJam('');
     setEditMenit('');
+    setEditJamAkhir('');
+    setEditMenitAkhir('');
     setEditError(null);
   };
 
   const handleEditClick = (schedule) => {
     const [jam = '', menit = ''] = (schedule.jam || '').split(':');
+    const [jamA = '', menitA = ''] = (schedule.jam_selesai || '').split(':');
     setEditingSchedule(schedule);
     setEditForm({
       id_jadwal: schedule.id_jadwal,
       hari: schedule.hari,
       jam: schedule.jam,
+      jam_selesai: schedule.jam_selesai || '',
       id_kelas: schedule.id_kelas,
       nama_kelas: schedule.nama_kelas,
       id_mapel: schedule.id_mapel,
@@ -167,6 +174,8 @@ const ManajemenJadwal = () => {
     });
     setEditJam(jam);
     setEditMenit(menit);
+    setEditJamAkhir(jamA);
+    setEditMenitAkhir(menitA);
     setEditError(null);
   };
 
@@ -253,10 +262,22 @@ const ManajemenJadwal = () => {
     const payload = {
       hari: editForm.hari,
       jam: `${editJam}:${editMenit}`,
+      jam_selesai: `${editJamAkhir}:${editMenitAkhir}`,
       id_kelas,
       id_mapel,
       id_tutor,
     };
+
+    // Validasi: jam_selesai harus > jam
+    if (payload.jam_selesai && payload.jam_selesai <= payload.jam) {
+      setEditError('Jam selesai harus lebih besar dari jam mulai.');
+      setSaving(false);
+      return;
+    }
+    // Jika tidak diisi, kirim null
+    if (!editJamAkhir || !editMenitAkhir) {
+      payload.jam_selesai = null;
+    }
     console.log('Sending payload:', payload);
 
     try {
@@ -341,7 +362,8 @@ const ManajemenJadwal = () => {
                   <tr>
                     <th>No</th>
                     <th>Hari</th>
-                    <th>Jam</th>
+                    <th>Jam Mulai</th>
+                    <th>Jam Selesai</th>
                     <th>Kelas</th>
                     <th>Mata Pelajaran</th>
                     <th>Tutor</th>
@@ -355,6 +377,7 @@ const ManajemenJadwal = () => {
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
                         <td>{schedule.hari}</td>
                         <td>{schedule.jam}</td>
+                        <td>{schedule.jam_selesai || '-'}</td>
                         <td>{schedule.nama_kelas}</td>
                         <td>{schedule.nama_mapel}</td>
                         <td>{schedule.nama_tutor}</td>
@@ -378,7 +401,7 @@ const ManajemenJadwal = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7">Tidak ada jadwal yang ditemukan.</td>
+                      <td colSpan={8} className={styles.emptyTableCell}>Tidak ada jadwal yang ditemukan.</td>
                     </tr>
                   )}
                 </tbody>
@@ -453,6 +476,37 @@ const ManajemenJadwal = () => {
                       onChange={(e) => setEditMenit(e.target.value)}
                       className={styles.input}
                       required
+                    >
+                      <option value="">MM</option>
+                      {minuteOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Jam Selesai:</label>
+                  <div className={styles.timeSelectGroup}>
+                    <select
+                      value={editJamAkhir}
+                      onChange={(e) => setEditJamAkhir(e.target.value)}
+                      className={styles.input}
+                    >
+                      <option value="">JJ</option>
+                      {hourOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className={styles.timeSeparator}>:</span>
+                    <select
+                      value={editMenitAkhir}
+                      onChange={(e) => setEditMenitAkhir(e.target.value)}
+                      className={styles.input}
                     >
                       <option value="">MM</option>
                       {minuteOptions.map((opt) => (

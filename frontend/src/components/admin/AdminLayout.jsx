@@ -12,6 +12,7 @@ import {
   MdAccessTime,
   MdClass,
   MdLogout,
+  MdSwapHoriz,
 } from 'react-icons/md';
 import styles from './AdminLayout.module.css';
 
@@ -25,7 +26,7 @@ const NAV_ITEMS = [
   { label: 'Presensi Tutor', icon: MdAccessTime, to: '/admin/presensi_guru' },
   { label: 'Jadwal', icon: MdCalendarMonth, to: '/admin/jadwal' },
   { label: 'Rekap Absensi', icon: MdHowToReg, to: '/admin/absensi' },
-
+  { label: 'Infal Tutor', icon: MdSwapHoriz, to: '/admin/infal-tutor' },
 ];
 
 function AdminLayout({ children }) {

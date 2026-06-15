@@ -68,6 +68,7 @@ const JadwalMengajar = () => {
         nama_mapel: jadwal.nama_mapel,
         hari: jadwal.hari,
         jam: jadwal.jam,
+        jam_selesai: jadwal.jam_selesai,
       },
     });
   };
@@ -142,6 +143,7 @@ const JadwalMengajar = () => {
                             <td>{jadwal.nama_kelas || '-'}</td>
                             <td className={styles.jamCell}>
                               {formatJam(jadwal.jam)}
+                              {jadwal.jam_selesai ? ` - ${formatJam(jadwal.jam_selesai)}` : ''}
                             </td>
                             <td className={styles.colAksi}>
                               <button

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth.js';
 import {
   getAllAbsensiSiswa,
   getAbsensiSiswaById,
@@ -9,6 +10,7 @@ import {
   confirmByKelas,
   confirmAllToday,
   deleteAbsensiSiswa,
+  getMyAbsensiRecap,
 } from '../controllers/absensiSiswaController.js';
 
 const router = Router();
@@ -16,6 +18,7 @@ const router = Router();
 router.post('/bulk', bulkUpsertAbsensiSiswa);
 router.patch('/confirm-all-today', confirmAllToday);
 router.patch('/confirm-class/:id_kelas', confirmByKelas);
+router.get('/recap/me', authMiddleware, getMyAbsensiRecap);
 
 router.get('/', getAllAbsensiSiswa);
 router.get('/:id', getAbsensiSiswaById);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { MdCheckCircle, MdClose } from 'react-icons/md';
+import { MdClose } from 'react-icons/md';
 import api from '../../../services/api';
 import styles from './kelola_gaji.module.css';
 
@@ -39,21 +39,45 @@ const KelolaGaji = () => {
 
   const [editState, setEditState] = useState({});
 
-  const [modal, setModal] = useState({ open: false, mode: 'preview' }); // 'preview' | 'edit'
+  const [modal, setModal] = useState({ open: false, mode: 'preview' });
   const [previewData, setPreviewData] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editBonus, setEditBonus] = useState(0);
   const [editPotongan, setEditPotongan] = useState(0);
 
+  // Bonus toggle state
+  const [bonusToggle, setBonusToggle] = useState({});
+  const [bonusNominalSetting, setBonusNominalSetting] = useState(65000);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get(`/gaji/all?bulan=${bulan}&tahun=${tahun}`);
-      if (res.data?.success) {
-        setData(res.data.data);
+
+      const [gajiRes, bonusRes, settingRes] = await Promise.all([
+        api.get(`/gaji/all?bulan=${bulan}&tahun=${tahun}`),
+        api.get(`/gaji/bonus?bulan=${bulan}&tahun=${tahun}`).catch(() => ({ data: { data: [] } })),
+        api.get('/settings').catch(() => ({ data: { data: {} } })),
+      ]);
+
+      if (gajiRes.data?.success) {
+        setData(gajiRes.data.data);
       } else {
         setError('Gagal memuat data gaji');
+      }
+
+      // Load existing bonus assignments
+      const existingBonus = bonusRes.data?.data || [];
+      const toggleMap = {};
+      existingBonus.forEach((b) => {
+        toggleMap[b.id_tutor] = true;
+      });
+      setBonusToggle(toggleMap);
+
+      // Load bonus nominal from settings
+      const settings = settingRes.data?.data || {};
+      if (settings.bonus_kehadiran_nominal?.value) {
+        setBonusNominalSetting(Number(settings.bonus_kehadiran_nominal.value));
       }
     } catch (err) {
       console.error('Gagal memuat data gaji:', err);
@@ -101,16 +125,27 @@ const KelolaGaji = () => {
     }
   };
 
-  const handleKirim = async (idTutor, bonus, potongan, totalSpp, honor, totalNeto) => {
+  const handleKirim = async (idTutor, bonus, potongan, totalInfal, totalSpp, honor, totalNeto) => {
     try {
       setError(null);
-      const totalGaji = totalNeto || (honor + (bonus || 0) - (potongan || 0));
+      const totalGaji = totalNeto || (honor + (bonus || 0) - (potongan || 0) + (totalInfal || 0));
+
+      // Simpan bonus assignment dulu (kirim 0 jika toggle off untuk hapus)
+      const isBonusActive = bonusToggle[idTutor] === true;
+      await api.post('/gaji/bonus', {
+        assignments: [{ id_tutor: idTutor, nominal: isBonusActive ? bonusNominalSetting : 0 }],
+        bulan,
+        tahun,
+      });
+
+      // Kirim gaji
       const body = {
         id_tutor: idTutor,
         bulan,
         tahun,
-        bonus: bonus || 0,
+        bonus: isBonusActive ? bonusNominalSetting : 0,
         potongan: potongan || 0,
+        total_infal: totalInfal || 0,
         total_pemasukan: totalSpp,
         total_gaji: totalGaji,
       };
@@ -127,11 +162,19 @@ const KelolaGaji = () => {
     }
   };
 
+  const handleBonusToggle = (idTutor) => {
+    setBonusToggle((prev) => ({
+      ...prev,
+      [idTutor]: !prev[idTutor],
+    }));
+  };
+
   const handleSaveEdit = () => {
     if (!previewData) return;
     const idTutor = previewData.tutor.id_tutor;
-    const totalGaji = previewData.komisi_dasar + editBonus - editPotongan;
-    handleKirim(idTutor, editBonus, editPotongan, previewData.total_spp, previewData.komisi_dasar, totalGaji);
+    const totalInfalVal = previewData.infal?.total || 0;
+    const totalGaji = previewData.komisi_dasar + editBonus - editPotongan + totalInfalVal;
+    handleKirim(idTutor, editBonus, editPotongan, totalInfalVal, previewData.total_spp, previewData.komisi_dasar, totalGaji);
     setModal({ open: false, mode: 'preview' });
     setPreviewData(null);
   };
@@ -215,10 +258,12 @@ const KelolaGaji = () => {
               <thead>
                 <tr>
                   <th>Nama Tutor</th>
-                  <th className={styles.colCenter}>Kehadiran</th>
+                  <th className={styles.colCenter}>Hadir</th>
+                  <th className={styles.colCenter}>Tdk Masuk</th>
                   <th className={styles.colNominal}>Honor (40%)</th>
-                  <th className={styles.colNominal}>Bonus</th>
+                  <th className={styles.colCenter}>Bonus</th>
                   <th className={styles.colNominal}>Potongan</th>
+                  <th className={styles.colNominal}>Infal</th>
                   <th className={styles.colNominal}>Total Neto</th>
                   <th className={styles.colCenter}>Aksi</th>
                 </tr>
@@ -226,7 +271,7 @@ const KelolaGaji = () => {
               <tbody>
                 {data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className={styles.emptyCell}>
+                    <td colSpan={9} className={styles.emptyCell}>
                       Tidak ada data tutor
                     </td>
                   </tr>
@@ -234,33 +279,40 @@ const KelolaGaji = () => {
                   data.map((row) => {
                     const isEditing = !!editState[row.id_tutor];
                     const editVals = editState[row.id_tutor];
-                    const bonusVal = isEditing ? editVals.bonus : row.bonus;
+                    const isBonusActive = bonusToggle[row.id_tutor] === true;
+                    const derivedBonus = isBonusActive ? bonusNominalSetting : 0;
+                    const bonusVal = isEditing ? editVals.bonus : derivedBonus;
                     const potonganVal = isEditing ? editVals.potongan : row.potongan;
-                    const totalNeto = row.honor + (bonusVal || 0) - (potonganVal || 0);
+                    const totalNeto = row.honor + (bonusVal || 0) - (potonganVal || 0) + (row.total_infal || 0);
 
                     return (
                       <tr key={row.id_tutor}>
                         <td>
                           <strong>{row.nama_tutor}</strong>
                         </td>
-                        <td className={styles.colCenter}>{row.hadir} Hari</td>
+                        <td className={styles.colCenter}>{row.hadir}</td>
+                        <td className={styles.colCenter}>
+                          {row.tidak_masuk > 0 ? (
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>{row.tidak_masuk}</span>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>0</span>
+                          )}
+                        </td>
                         <td className={styles.colNominal}>
                           {formatRupiah(row.honor)}
                         </td>
-                        <td className={styles.colNominal}>
-                          {isEditing ? (
+                        <td className={styles.colCenter}>
+                          <label className={styles.bonusToggleLabel}>
                             <input
-                              className={styles.editInput}
-                              type="number"
-                              value={editVals.bonus}
-                              onChange={(e) =>
-                                updateInlineEdit(row.id_tutor, 'bonus', e.target.value)
-                              }
+                              type="checkbox"
+                              className={styles.bonusCheckbox}
+                              checked={!!bonusToggle[row.id_tutor]}
+                              onChange={() => handleBonusToggle(row.id_tutor)}
                             />
-                          ) : row.bonus !== null ? (
-                            formatRupiah(row.bonus)
-                          ) : (
-                            <span className={styles.dashText}>-</span>
+                            <span className={styles.bonusToggleSwitch} />
+                          </label>
+                          {bonusToggle[row.id_tutor] && (
+                            <div className={styles.bonusNominal}>{formatRupiah(bonusNominalSetting)}</div>
                           )}
                         </td>
                         <td className={styles.colNominal}>
@@ -279,12 +331,20 @@ const KelolaGaji = () => {
                             <span className={styles.dashText}>-</span>
                           )}
                         </td>
+                        <td className={styles.colNominal} style={{ color: '#7c3aed' }}>
+                          {row.total_infal > 0 ? (
+                            <>
+                              {formatRupiah(row.total_infal)}
+                              <span style={{ display: 'block', fontSize: '0.688rem', color: '#a78bfa' }}>
+                                (termasuk infal)
+                              </span>
+                            </>
+                          ) : (
+                            <span className={styles.dashText}>-</span>
+                          )}
+                        </td>
                         <td className={styles.colNominal}>
-                          <strong>
-                            {row.is_confirmed
-                              ? formatRupiah(row.total_gaji)
-                              : formatRupiah(totalNeto)}
-                          </strong>
+                          <strong>{formatRupiah(totalNeto)}</strong>
                         </td>
                         <td className={styles.colCenter}>
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
@@ -298,11 +358,12 @@ const KelolaGaji = () => {
                               <button
                                 className={`${styles.actionBtn} ${styles.sendBtn}`}
                                 onClick={() => {
-                                  const neto = row.honor + editVals.bonus - editVals.potongan;
+                                  const neto = row.honor + editVals.bonus - editVals.potongan + (row.total_infal || 0);
                                   handleKirim(
                                     row.id_tutor,
                                     editVals.bonus,
                                     editVals.potongan,
+                                    row.total_infal || 0,
                                     row.total_spp,
                                     row.honor,
                                     neto
@@ -316,7 +377,7 @@ const KelolaGaji = () => {
                               <button
                                 className={`${styles.actionBtn} ${styles.editBtn}`}
                                 onClick={() =>
-                                  toggleInlineEdit(row.id_tutor, row.bonus, row.potongan)
+                                  toggleInlineEdit(row.id_tutor, bonusVal, row.potongan)
                                 }
                               >
                                 Edit
@@ -328,11 +389,12 @@ const KelolaGaji = () => {
                                 onClick={() =>
                                   handleKirim(
                                     row.id_tutor,
-                                    row.bonus || 0,
+                                    bonusVal,
                                     row.potongan || 0,
+                                    row.total_infal || 0,
                                     row.total_spp,
                                     row.honor,
-                                    row.total_gaji || (row.honor + (row.bonus || 0) - (row.potongan || 0))
+                                    row.total_gaji || (row.honor + bonusVal - (row.potongan || 0) + (row.total_infal || 0))
                                   )
                                 }
                               >
@@ -369,7 +431,6 @@ const KelolaGaji = () => {
                 <div className={styles.loadingState}>Memuat data...</div>
               ) : previewData ? (
                 <>
-                  {}
                   <div className={styles.previewTitleSection}>
                     <div>
                       <h4 className={styles.previewTutorName}>
@@ -382,7 +443,6 @@ const KelolaGaji = () => {
                     </span>
                   </div>
 
-                  {}
                   <div>
                     <table className={styles.previewMiniTable}>
                       <thead>
@@ -430,7 +490,6 @@ const KelolaGaji = () => {
                     </table>
                   </div>
 
-                  {}
                   <div className={styles.previewCards}>
                     <div className={styles.previewCard}>
                       <h5 className={styles.previewCardTitle}>Komisi Dasar (B)</h5>
@@ -450,6 +509,9 @@ const KelolaGaji = () => {
                         <span style={{ color: '#dc2626' }}>
                           -{formatRupiah(previewData.potongan)}
                         </span>
+                        <span style={{ color: '#8b5cf6' }}>
+                          +{formatRupiah(previewData.infal?.total || 0)} ({previewData.infal?.jumlah || 0}x Infal)
+                        </span>
                       </div>
                       <span
                         className={styles.previewCardNominal}
@@ -465,7 +527,6 @@ const KelolaGaji = () => {
                     </div>
                   </div>
 
-                  {}
                   <div className={styles.previewGrandTotal}>
                     <span className={styles.previewGrandLabel}>
                       GRAND TOTAL (B + C)
@@ -475,7 +536,6 @@ const KelolaGaji = () => {
                     </span>
                   </div>
 
-                  {}
                   {modal.mode === 'edit' && (
                     <>
                       <div className={styles.previewEditRow}>

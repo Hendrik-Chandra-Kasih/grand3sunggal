@@ -2,15 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import {
   MdSchool,
+  MdDashboard,
   MdAttachMoney,
   MdAssessment,
   MdLogout,
+  MdSettings,
 } from 'react-icons/md';
 import styles from './OwnerLayout.module.css';
 
 const NAV_ITEMS = [
-  { label: 'Laporan Keuangan', icon: MdAssessment, to: '/owner/laporan-keuangan' },
+  { label: 'Dashboard', icon: MdDashboard, to: '/owner/dashboard' },
   { label: 'Kelola Gaji', icon: MdAttachMoney, to: '/owner/kelola-gaji' },
+  { label: 'Laporan Keuangan', icon: MdAssessment, to: '/owner/laporan-keuangan' },
+  { label: 'Pengaturan', icon: MdSettings, to: '/owner/pengaturan' },
 ];
 
 function OwnerLayout({ children }) {
@@ -36,8 +40,10 @@ function OwnerLayout({ children }) {
   };
 
   const getPageTitle = () => {
+    if (location.pathname.includes('dashboard')) return 'Dashboard';
     if (location.pathname.includes('kelola-gaji')) return 'Kelola Gaji';
     if (location.pathname.includes('laporan-keuangan')) return 'Laporan Keuangan';
+    if (location.pathname.includes('pengaturan')) return 'Pengaturan';
     return 'Owner';
   };
 

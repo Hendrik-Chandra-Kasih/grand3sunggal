@@ -4,6 +4,8 @@ import {
   getPerhitunganGaji,
   getPerhitunganGajiByIdTutor,
   getAllGaji,
+  getBonusAssignments,
+  saveBonusAssignment,
   sendGaji,
 } from '../controllers/gajiController.js';
 
@@ -14,6 +16,10 @@ router.get('/perhitungan', authMiddleware, getPerhitunganGaji);
 router.get('/perhitungan/:id_tutor', authMiddleware, getPerhitunganGajiByIdTutor);
 
 router.get('/all', authMiddleware, getAllGaji);
+
+router.get('/bonus', authMiddleware, getBonusAssignments);
+
+router.post('/bonus', authMiddleware, saveBonusAssignment);
 
 router.post('/send', authMiddleware, sendGaji);
 

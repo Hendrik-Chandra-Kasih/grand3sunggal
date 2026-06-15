@@ -190,3 +190,144 @@ export const deleteAbsensiSiswa = async (req, res) => {
     handleError(res, error);
   }
 };
+
+// ─── GET /absensi-siswa/recap/me — rekap absensi per jadwal untuk siswa login ───
+export const getMyAbsensiRecap = async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: 'User tidak terautentikasi' });
+    }
+
+    const { bulan, tahun } = req.query;
+    const today = new Date();
+    const targetMonth = bulan ? parseInt(bulan, 10) : today.getMonth() + 1;
+    const targetYear = tahun ? parseInt(tahun, 10) : today.getFullYear();
+
+    // 1. Dapatkan data siswa dari user login
+    const siswaRow = await queryOne(
+      `SELECT id_siswa, nama FROM siswa WHERE id_user = ? LIMIT 1`,
+      [req.userId]
+    );
+
+    if (!siswaRow) {
+      return res.status(404).json({ success: false, message: 'Data siswa tidak ditemukan.' });
+    }
+
+    const idSiswa = siswaRow.id_siswa;
+
+    // 2. Dapatkan jadwal siswa
+    const jadwalList = await query(
+      `SELECT DISTINCT j.id_jadwal, j.hari, j.jam, j.jam_selesai,
+              k.nama_kelas, m.nama_mapel
+       FROM jadwal j
+       INNER JOIN kelas k ON k.id_kelas = j.id_kelas
+       LEFT JOIN mapel m ON m.id_mapel = j.id_mapel
+       INNER JOIN kelas_siswa ks ON ks.id_kelas = j.id_kelas
+       WHERE ks.id_siswa = ?
+       ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'),
+                j.jam ASC`,
+      [idSiswa]
+    );
+
+    // 3. Dapatkan semua absensi siswa di bulan ini
+    const absensiList = await query(
+      `SELECT a.id_jadwal, a.status, DAY(a.tanggal) AS hari
+       FROM absensi_siswa a
+       WHERE a.id_siswa = ?
+         AND MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?`,
+      [idSiswa, targetMonth, targetYear]
+    );
+
+    // 4. Kelompokkan absensi per jadwal
+    const absensiMap = {};
+    absensiList.forEach((a) => {
+      if (!absensiMap[a.id_jadwal]) {
+        absensiMap[a.id_jadwal] = [];
+      }
+      absensiMap[a.id_jadwal].push(a);
+    });
+
+    // 5. Hitung jumlah hari dalam bulan
+    const numDays = new Date(targetYear, targetMonth, 0).getDate();
+
+    const data = jadwalList.map((jadwal) => {
+      const absensiJadwal = absensiMap[jadwal.id_jadwal] || [];
+
+      // Buat map hari -> status
+      const dayMap = {};
+      absensiJadwal.forEach((a) => {
+        dayMap[a.hari] = a.status;
+      });
+
+      // Hitung per-jadwal
+      let hadir = 0;
+      let alpha = 0;
+      let sakit = 0;
+      let izin = 0;
+
+      // Hitung hari yang sesuai dengan hari jadwal
+      const dayIndex = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].indexOf(jadwal.hari);
+
+      const days = [];
+      for (let d = 1; d <= numDays; d++) {
+        const dateObj = new Date(targetYear, targetMonth - 1, d);
+        const dow = dateObj.getDay();
+
+        // Hanya tampilkan hari yang sesuai dengan hari jadwal
+        if (dow !== dayIndex) continue;
+
+        const status = dayMap[d] || null;
+
+        let displayStatus = 'alpha';
+        if (status === 'Hadir') {
+          displayStatus = 'hadir';
+          hadir++;
+        } else if (status === 'Sakit') {
+          displayStatus = 'sakit';
+          sakit++;
+        } else if (status === 'Izin') {
+          displayStatus = 'izin';
+          izin++;
+        } else {
+          displayStatus = 'alpha';
+          alpha++;
+        }
+
+        days.push({ day: d, status: displayStatus });
+      }
+
+      const totalPertemuan = hadir + alpha + sakit + izin;
+      const persentase = totalPertemuan > 0 ? Math.round((hadir / totalPertemuan) * 100) : 0;
+
+      return {
+        id_jadwal: jadwal.id_jadwal,
+        hari: jadwal.hari,
+        jam: jadwal.jam,
+        jam_selesai: jadwal.jam_selesai,
+        nama_kelas: jadwal.nama_kelas,
+        nama_mapel: jadwal.nama_mapel,
+        hadir,
+        alpha,
+        sakit,
+        izin,
+        total_pertemuan: totalPertemuan,
+        persentase,
+        days,
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+      meta: {
+        bulan: targetMonth,
+        tahun: targetYear,
+        jumlah_hari: numDays,
+        nama_siswa: siswaRow.nama,
+      },
+    });
+  } catch (error) {
+    console.error('❌ getMyAbsensiRecap error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

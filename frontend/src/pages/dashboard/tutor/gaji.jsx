@@ -197,10 +197,14 @@ const Gaji = () => {
               <div className={styles.cardBody}>
                 <h3 className={styles.cardTitle}>Komisi Dasar (B)</h3>
                 <p className={styles.cardSubtext}>
-                  40% dari Total SPP (A)
+                  {data.periode?.hari_kerja_standar || 20}% dari Total SPP (A)
                 </p>
                 <div className={styles.cardNominal}>
                   {formatRupiah(data.komisi_dasar)}
+                </div>
+                <div className={styles.cardFooter}>
+                  <span>Hari kerja: {data.periode?.hari_kerja_aktual || '-'} / {data.periode?.hari_kerja_standar || 20} hari</span>
+                  <span>Hadir: {data.absensi?.hadir || 0} | Tidak masuk: {data.absensi?.tidak_masuk || 0}</span>
                 </div>
               </div>
             </div>
@@ -213,7 +217,7 @@ const Gaji = () => {
                 <div className={styles.adjustmentList}>
                   <div className={styles.adjustmentRow}>
                     <span className={styles.adjustmentLabel}>
-                      Penambahan                      
+                      Bonus Kehadiran
                     </span>
                     <span className={styles.adjustmentGreen}>
                       +{formatRupiah(data.bonus)}
@@ -221,10 +225,18 @@ const Gaji = () => {
                   </div>
                   <div className={styles.adjustmentRow}>
                     <span className={styles.adjustmentLabel}>
-                      Potongan
+                      Potongan Absen
                     </span>
                     <span className={styles.adjustmentRed}>
                       -{formatRupiah(data.potongan)}
+                    </span>
+                  </div>
+                  <div className={styles.adjustmentRow}>
+                    <span className={styles.adjustmentLabel}>
+                      Infal ({data.infal?.jumlah || 0}x)
+                    </span>
+                    <span className={styles.adjustmentPurple}>
+                      +{formatRupiah(data.infal?.total || 0)}
                     </span>
                   </div>
                 </div>

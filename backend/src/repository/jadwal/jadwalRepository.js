@@ -9,6 +9,7 @@ const SELECT_COLUMNS = [
   'j.id_mapel',
   'j.hari',
   'j.jam',
+  'j.jam_selesai',
   'k.nama_kelas',
   'm.nama_mapel',
   't.nama_tutor',

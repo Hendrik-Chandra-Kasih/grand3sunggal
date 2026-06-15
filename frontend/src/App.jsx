@@ -17,18 +17,24 @@ import ManajemenJadwal from './pages/dashboard/admin/manajemen_jadwal'
 import DaftarKelas from './pages/dashboard/admin/daftar_kelas'
 import RekapAbsensi from './pages/dashboard/admin/rekap_absensi'
 import TutorLayout from './components/tutor/TutorLayout'
+import TutorDashboard from './pages/dashboard/tutor/tutor_dashboard'
 import JadwalMengajar from './pages/dashboard/tutor/jadwal_mengajar'
 import Kehadiran from './pages/dashboard/tutor/kehadiran'
 import Gaji from './pages/dashboard/tutor/gaji'
 import ProfileTutor from './pages/dashboard/tutor/profile'
 import AbsensiSiswaTutor from './pages/dashboard/tutor/absensi_siswa'
 import StudentLayout from './components/siswa/StudentLayout'
+import SiswaDashboard from './pages/dashboard/siswa/siswa_dashboard'
 import ProfileSiswa from './pages/dashboard/siswa/profile'
 import JadwalSiswa from './pages/dashboard/siswa/jadwal'
 import PembayaranSiswaPage from './pages/dashboard/siswa/pembayaran'
+import RekapAbsensiSiswa from './pages/dashboard/siswa/rekap_absensi'
 import OwnerLayout from './components/owner/OwnerLayout'
+import OwnerDashboard from './pages/dashboard/owner/owner_dashboard'
 import KelolaGaji from './pages/dashboard/owner/kelola_gaji'
 import LaporanKeuangan from './pages/dashboard/owner/laporan_keuangan'
+import Pengaturan from './pages/dashboard/owner/pengaturan'
+import InfalTutor from './pages/dashboard/admin/infal_tutor'
 import './App.css'
 
 function App() {
@@ -125,10 +131,28 @@ function App() {
           }
         />
         <Route
+          path="/admin/infal-tutor"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <InfalTutor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/tutor"
           element={
             <ProtectedRoute allowedRoles={['tutor']}>
-              <Navigate to="/tutor/jadwal-mengajar" replace />
+              <Navigate to="/tutor/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['tutor']}>
+              <TutorLayout>
+                <TutorDashboard />
+              </TutorLayout>
             </ProtectedRoute>
           }
         />
@@ -186,7 +210,17 @@ function App() {
           path="/siswa"
           element={
             <ProtectedRoute allowedRoles={['siswa']}>
-              <Navigate to="/siswa/profile" replace />
+              <Navigate to="/siswa/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/siswa/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['siswa']}>
+              <StudentLayout>
+                <SiswaDashboard />
+              </StudentLayout>
             </ProtectedRoute>
           }
         />
@@ -221,10 +255,30 @@ function App() {
           }
         />
         <Route
+          path="/siswa/rekap-absensi"
+          element={
+            <ProtectedRoute allowedRoles={['siswa']}>
+              <StudentLayout>
+                <RekapAbsensiSiswa />
+              </StudentLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/owner"
           element={
             <ProtectedRoute allowedRoles={['pemilik']}>
-              <Navigate to="/owner/laporan-keuangan" replace />
+              <Navigate to="/owner/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['pemilik']}>
+              <OwnerLayout>
+                <OwnerDashboard />
+              </OwnerLayout>
             </ProtectedRoute>
           }
         />
@@ -244,6 +298,16 @@ function App() {
             <ProtectedRoute allowedRoles={['pemilik']}>
               <OwnerLayout>
                 <LaporanKeuangan />
+              </OwnerLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/pengaturan"
+          element={
+            <ProtectedRoute allowedRoles={['pemilik']}>
+              <OwnerLayout>
+                <Pengaturan />
               </OwnerLayout>
             </ProtectedRoute>
           }
