@@ -48,6 +48,7 @@ const KelolaGaji = () => {
   // Bonus toggle state
   const [bonusToggle, setBonusToggle] = useState({});
   const [bonusNominalSetting, setBonusNominalSetting] = useState(65000);
+  const [sendingAll, setSendingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -162,6 +163,48 @@ const KelolaGaji = () => {
     }
   };
 
+  const handleKirimSemua = async () => {
+    if (!window.confirm(`Kirim gaji semua tutor untuk ${MONTHS.find(m => m.value === bulan)?.label} ${tahun}?`)) return;
+    try {
+      setSendingAll(true);
+      setError(null);
+
+      for (const row of data) {
+        const isBonusActive = bonusToggle[row.id_tutor] === true;
+        const derivedBonus = isBonusActive ? bonusNominalSetting : 0;
+        const totalNeto = row.honor + derivedBonus - (row.potongan || 0) + (row.total_infal || 0);
+
+        // Simpan bonus assignment
+        await api.post('/gaji/bonus', {
+          assignments: [{ id_tutor: row.id_tutor, nominal: isBonusActive ? bonusNominalSetting : 0 }],
+          bulan,
+          tahun,
+        });
+
+        // Kirim gaji
+        await api.post('/gaji/send', {
+          id_tutor: row.id_tutor,
+          bulan,
+          tahun,
+          bonus: derivedBonus,
+          potongan: row.potongan || 0,
+          total_infal: row.total_infal || 0,
+          total_pemasukan: row.total_spp,
+          total_gaji: totalNeto,
+        });
+      }
+
+      setSuccessMsg(`Gaji semua tutor berhasil dikirim`);
+      fetchData();
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      console.error('Gagal mengirim gaji semua:', err);
+      setError(err.response?.data?.message || 'Gagal mengirim gaji semua tutor');
+    } finally {
+      setSendingAll(false);
+    }
+  };
+
   const handleBonusToggle = (idTutor) => {
     setBonusToggle((prev) => ({
       ...prev,
@@ -240,6 +283,14 @@ const KelolaGaji = () => {
             })}
           </select>
         </div>
+        <button
+          className={styles.sendAllBtn}
+          onClick={handleKirimSemua}
+          disabled={sendingAll || data.length === 0}
+          style={{ marginLeft: 'auto' }}
+        >
+          {sendingAll ? 'Mengirim...' : `Kirim Semua (${data.length})`}
+        </button>
       </div>
 
       {}

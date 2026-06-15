@@ -69,6 +69,43 @@ const Gaji = () => {
   const bulanLabel = MONTHS.find((m) => m.value === bulan)?.label || '';
   const periodeLabel = `${bulanLabel} ${tahun}`;
 
+  // Empty state: belum ada data gaji di gaji_tutor
+  const isEmptyState = !loading && !error && data && !data.status_gaji;
+
+  if (isEmptyState) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.filterBar}>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Bulan</label>
+            <select className={styles.filterSelect} value={bulan} onChange={(e) => setBulan(Number(e.target.value))}>
+              {MONTHS.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
+            </select>
+          </div>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Tahun</label>
+            <select className={styles.filterSelect} value={tahun} onChange={(e) => setTahun(Number(e.target.value))}>
+              {Array.from({ length: 10 }, (_, i) => {
+                const y = today.getFullYear() - 5 + i;
+                return (<option key={y} value={y}>{y}</option>);
+              })}
+            </select>
+          </div>
+        </div>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateIcon}>📊</div>
+          <h3 className={styles.emptyStateTitle}>Belum Ada Data Gaji</h3>
+          <p className={styles.emptyStateSubtitle}>
+            Data gaji untuk periode <strong>{periodeLabel}</strong> belum tersedia.
+          </p>
+          <p className={styles.emptyStateHint}>
+            Silakan hubungi admin atau owner untuk informasi lebih lanjut.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* ─── Filter ──────────────────────────────────────── */}

@@ -137,6 +137,26 @@
   line-height: 1.2;
 }
 
+/* ─── Kirim Semua Button ──────────────── */
+.sendAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: .813rem;
+  font-weight: 600;
+  color: #fff;
+  background: #1e40af;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.sendAllBtn:hover { background: #1e3a8a; }
+.sendAllBtn:disabled { opacity: .6; cursor: not-allowed; }
+
 .colCenter {
   text-align: center;
 }
