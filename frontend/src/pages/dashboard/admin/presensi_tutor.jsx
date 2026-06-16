@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MdCalendarMonth,
   MdCheckCircle,
@@ -49,13 +49,19 @@ const PresensiTutor = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [mapelOptions, setMapelOptions] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const dateInputRef = useRef(null);
 
-  const fetchPresensiTutor = useCallback(async () => {
+  const fetchPresensiTutor = useCallback(async (tanggal) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.get('/absensi-tutor/today');
+      const tgl = tanggal || selectedDate;
+      const response = await api.get(`/absensi-tutor/today?tanggal=${tgl}`);
       const data = Array.isArray(response.data?.data) ? response.data.data : [];
 
       setRows(
@@ -68,11 +74,11 @@ const PresensiTutor = () => {
     } catch (err) {
       console.error('Fetch presensi tutor error:', err);
       setRows([]);
-      setError('Gagal memuat data presensi tutor hari ini.');
+      setError('Gagal memuat data presensi tutor.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDate]);
 
   const fetchMapelOptions = useCallback(async () => {
     try {
@@ -201,17 +207,31 @@ const PresensiTutor = () => {
           <button
             type="button"
             className={styles.btnRefresh}
-            onClick={fetchPresensiTutor}
+            onClick={() => fetchPresensiTutor()}
             disabled={loading}
           >
             <MdRefresh className={loading ? styles.spin : ''} />
             <span>Refresh</span>
           </button>
 
-          <div className={styles.dateBadge}>
+          <button
+            type="button"
+            className={styles.dateBadge}
+            onClick={() => dateInputRef.current?.showPicker()}
+            title="Klik untuk mengubah tanggal"
+          >
             <MdCalendarMonth />
             <span>{tanggalLabel}</span>
-          </div>
+          </button>
+
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className={styles.hiddenDateInput}
+            aria-label="Pilih tanggal presensi"
+          />
         </div>
       </section>
 

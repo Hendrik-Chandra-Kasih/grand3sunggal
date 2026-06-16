@@ -464,7 +464,9 @@ const ManajemenTutor = () => {
                 pagedTutor.map((tutor, index) => {
                   const mapelIds = parseMapelIds(tutor.mapel);
                   const mapelNames = mapelIds.map((id) => getMapelName(id, mapelOptions)).filter(Boolean);
-                  const jadwalList = Array.isArray(tutor.jadwal) ? tutor.jadwal : [];
+                  const jadwalText = tutor.jadwal
+                    ? (Array.isArray(tutor.jadwal) ? tutor.jadwal.join(', ') : String(tutor.jadwal))
+                    : '';
                   const statusClass =
                     tutor.status === 'Aktif'
                       ? styles.badgeSuccess
@@ -489,10 +491,10 @@ const ManajemenTutor = () => {
                         )}
                       </td>
                       <td className={styles.jadwalCell}>
-                        {jadwalList.length === 0 ? (
+                        {!jadwalText ? (
                           <span className={styles.muted}>—</span>
                         ) : (
-                          jadwalList.join(', ')
+                          jadwalText
                         )}
                       </td>
                       <td>
@@ -657,7 +659,13 @@ const ManajemenTutor = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Mapel / Kelas</span>
-                  <span className={styles.detailValue}>{viewingTutor.mapel || '—'}</span>
+                  <span className={styles.detailValue}>
+                    {(() => {
+                      const ids = parseMapelIds(viewingTutor.mapel);
+                      const names = ids.map((id) => getMapelName(id, mapelOptions)).filter(Boolean);
+                      return names.length > 0 ? names.join(', ') : (String(viewingTutor.mapel || '—'));
+                    })()}
+                  </span>
                 </div>
                 <div className={`${styles.detailItem} ${styles.detailItemFull}`}>
                   <span className={styles.detailLabel}>Alamat</span>

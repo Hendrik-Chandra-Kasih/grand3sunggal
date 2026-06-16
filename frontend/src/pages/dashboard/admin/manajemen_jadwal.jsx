@@ -13,6 +13,13 @@ import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_jadwal.module.css';
 
+const DAY_ORDER = { Senin: 1, Selasa: 2, Rabu: 3, Kamis: 4, Jumat: 5 };
+
+const sortHari = (hari) => {
+  if (!Array.isArray(hari)) return hari;
+  return [...hari].sort((a, b) => (DAY_ORDER[a] || 99) - (DAY_ORDER[b] || 99));
+};
+
 const daysOfWeek = [
   { value: 'all', label: 'Semua Hari' },
   { value: 'Senin', label: 'Senin' },
@@ -20,8 +27,6 @@ const daysOfWeek = [
   { value: 'Rabu', label: 'Rabu' },
   { value: 'Kamis', label: 'Kamis' },
   { value: 'Jumat', label: 'Jumat' },
-  { value: 'Sabtu', label: 'Sabtu' },
-  { value: 'Minggu', label: 'Minggu' },
 ];
 
 const hourOptions = Array.from({ length: 24 }, (_, i) => {
@@ -36,7 +41,7 @@ const minuteOptions = Array.from({ length: 60 }, (_, i) => {
 
 const createInitialForm = () => ({
     id_jadwal: null,
-    hari: '',
+    hari: [],
     jam: '',
     jam_selesai: '',
     id_kelas: '',
@@ -118,7 +123,10 @@ const ManajemenJadwal = () => {
     let filtered = scheduleList;
 
     if (dayFilter !== 'all') {
-      filtered = filtered.filter((schedule) => schedule.hari === dayFilter);
+      filtered = filtered.filter((schedule) => {
+        const days = Array.isArray(schedule.hari) ? schedule.hari : [schedule.hari];
+        return days.includes(dayFilter);
+      });
     }
 
     if (search) {
@@ -159,10 +167,17 @@ const ManajemenJadwal = () => {
   const handleEditClick = (schedule) => {
     const [jam = '', menit = ''] = (schedule.jam || '').split(':');
     const [jamA = '', menitA = ''] = (schedule.jam_selesai || '').split(':');
+    // Parse hari: bisa berupa JSON string, array, atau string biasa
+    let hari = schedule.hari;
+    if (typeof hari === 'string') {
+      try { hari = JSON.parse(hari); } catch { hari = hari ? [hari] : []; }
+    }
+    if (!Array.isArray(hari)) hari = [hari];
+    hari = sortHari(hari);
     setEditingSchedule(schedule);
     setEditForm({
       id_jadwal: schedule.id_jadwal,
-      hari: schedule.hari,
+      hari,
       jam: schedule.jam,
       jam_selesai: schedule.jam_selesai || '',
       id_kelas: schedule.id_kelas,
@@ -180,8 +195,17 @@ const ManajemenJadwal = () => {
   };
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    if (name === 'hari') {
+      setEditForm((prev) => {
+        const hari = type === 'checkbox'
+          ? (checked ? [...prev.hari, value] : prev.hari.filter((h) => h !== value))
+          : value;
+        return { ...prev, hari };
+      });
+    } else {
+      setEditForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleClassChange = (e) => {
@@ -219,8 +243,8 @@ const ManajemenJadwal = () => {
     setSaving(true);
     setEditError(null);
 
-    if (!editForm.hari) {
-      setEditError('Hari harus diisi.');
+    if (!editForm.hari || editForm.hari.length === 0) {
+      setEditError('Pilih minimal satu hari.');
       setSaving(false);
       return;
     }
@@ -260,7 +284,7 @@ const ManajemenJadwal = () => {
     }
 
     const payload = {
-      hari: editForm.hari,
+      hari: JSON.stringify(editForm.hari),
       jam: `${editJam}:${editMenit}`,
       jam_selesai: `${editJamAkhir}:${editMenitAkhir}`,
       id_kelas,
@@ -375,7 +399,7 @@ const ManajemenJadwal = () => {
                     currentSchedules.map((schedule, index) => (
                       <tr key={schedule.id_jadwal}>
                         <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                        <td>{schedule.hari}</td>
+                        <td>{Array.isArray(schedule.hari) ? sortHari(schedule.hari).join(', ') : schedule.hari}</td>
                         <td>{schedule.jam}</td>
                         <td>{schedule.jam_selesai || '-'}</td>
                         <td>{schedule.nama_kelas}</td>
@@ -437,22 +461,21 @@ const ManajemenJadwal = () => {
               {editError && <p className={styles.errorMessage}>{editError}</p>}
               <form onSubmit={handleSave}>
                 <div className={styles.formGroup}>
-                  <label htmlFor="hari">Hari:</label>
-                  <select
-                    id="hari"
-                    name="hari"
-                    value={editForm.hari}
-                    onChange={handleFormChange}
-                    className={styles.input}
-                    required
-                  >
-                    <option value="">Pilih Hari</option>
-                    {daysOfWeek.slice(1).map((day) => ( // Exclude 'Semua Hari'
-                      <option key={day.value} value={day.value}>
+                  <label>Hari:</label>
+                  <div className={styles.checkboxGroup}>
+                    {daysOfWeek.slice(1).map((day) => (
+                      <label key={day.value} className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          name="hari"
+                          value={day.value}
+                          checked={editForm.hari.includes(day.value)}
+                          onChange={handleFormChange}
+                        />
                         {day.label}
-                      </option>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div className={styles.formGroup}>
                   <label>Jam:</label>

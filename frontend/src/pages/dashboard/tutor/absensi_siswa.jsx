@@ -190,7 +190,7 @@ const AbsensiSiswa = () => {
             <p className={styles.pageSubtitle}>
               {jadwal.nama_mapel} - {jadwal.nama_kelas}
               {' · '}
-              {jadwal.hari}, {formatJam(jadwal.jam)}
+              {Array.isArray(jadwal.hari) ? jadwal.hari.join(', ') : jadwal.hari}, {formatJam(jadwal.jam)}
             </p>
           )}
         </div>

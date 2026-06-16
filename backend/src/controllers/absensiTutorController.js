@@ -26,9 +26,10 @@ const handleError = (res, error) => {
 
 export const getTutorAttendanceToday = async (req, res) => {
   try {
-    const today = new Date();
-    const todayName = HARI_MAP_ID[today.getDay()];
-    const todayDate = formatDateOnly(today);
+    const tanggalParam = req.query.tanggal;
+    const tanggalDate = tanggalParam ? new Date(tanggalParam + 'T00:00:00') : new Date();
+    const todayName = HARI_MAP_ID[tanggalDate.getDay()];
+    const todayDate = formatDateOnly(tanggalDate);
 
     const rows = await query(
       `SELECT

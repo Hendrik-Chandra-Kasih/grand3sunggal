@@ -73,7 +73,10 @@ const SiswaDashboard = () => {
       // Jadwal hari ini
       if (jadwalRes.data?.success) {
         const all = jadwalRes.data.data || [];
-        setJadwalHariIni(all.filter((j) => j.hari === hariIni).sort((a, b) => (a.jam > b.jam ? 1 : -1)));
+        setJadwalHariIni(all.filter((j) => {
+          const days = Array.isArray(j.hari) ? j.hari : [j.hari];
+          return days.includes(hariIni);
+        }).sort((a, b) => (a.jam > b.jam ? 1 : -1)));
       }
 
       // Absensi recap
@@ -241,7 +244,7 @@ const SiswaDashboard = () => {
                   <div key={item.id_jadwal} className={styles.absensiItem}>
                     <div className={styles.absensiInfo}>
                       <div className={styles.absensiMapel}>{item.nama_mapel || '-'}</div>
-                      <div className={styles.absensiMeta}>{item.hari} • {item.nama_kelas}</div>
+                      <div className={styles.absensiMeta}>{Array.isArray(item.hari) ? item.hari.join(', ') : item.hari} • {item.nama_kelas}</div>
                     </div>
                     <div className={styles.absensiStats}>
                       <span className={`${styles.statBadge} ${styles.statBadgeGreen}`}>

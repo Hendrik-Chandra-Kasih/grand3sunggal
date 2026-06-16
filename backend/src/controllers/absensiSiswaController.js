@@ -224,8 +224,7 @@ export const getMyAbsensiRecap = async (req, res) => {
        LEFT JOIN mapel m ON m.id_mapel = j.id_mapel
        INNER JOIN kelas_siswa ks ON ks.id_kelas = j.id_kelas
        WHERE ks.id_siswa = ?
-       ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'),
-                j.jam ASC`,
+       ORDER BY j.jam ASC`,
       [idSiswa]
     );
 
@@ -265,16 +264,23 @@ export const getMyAbsensiRecap = async (req, res) => {
       let sakit = 0;
       let izin = 0;
 
-      // Hitung hari yang sesuai dengan hari jadwal
-      const dayIndex = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].indexOf(jadwal.hari);
+      // Hari bisa berupa JSON array atau string tunggal
+      let hariList = jadwal.hari;
+      if (typeof hariList === 'string') {
+        try { hariList = JSON.parse(hariList); } catch { hariList = [hariList]; }
+      }
+      if (!Array.isArray(hariList)) hariList = [hariList];
+
+      const dayNameToDow = { Senin: 1, Selasa: 2, Rabu: 3, Kamis: 4, Jumat: 5 };
+      const dayIndices = hariList.map((h) => dayNameToDow[h]).filter((idx) => idx !== undefined);
 
       const days = [];
       for (let d = 1; d <= numDays; d++) {
         const dateObj = new Date(targetYear, targetMonth - 1, d);
         const dow = dateObj.getDay();
 
-        // Hanya tampilkan hari yang sesuai dengan hari jadwal
-        if (dow !== dayIndex) continue;
+        // Hanya tampilkan hari yang sesuai dengan hari-hari jadwal
+        if (!dayIndices.includes(dow)) continue;
 
         const status = dayMap[d] || null;
 

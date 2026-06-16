@@ -4,7 +4,7 @@ import { MdChevronRight, MdSchool } from 'react-icons/md';
 import api from '../../../services/api';
 import styles from './jadwal_mengajar.module.css';
 
-const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
 const JadwalMengajar = () => {
   const navigate = useNavigate();
@@ -37,7 +37,10 @@ const JadwalMengajar = () => {
 
         const grouped = {};
         DAYS.forEach((day) => {
-          const items = jadwalList.filter((j) => j.hari === day);
+          const items = jadwalList.filter((j) => {
+          const days = Array.isArray(j.hari) ? j.hari : [j.hari];
+          return days.includes(day);
+        });
           if (items.length > 0) {
             grouped[day] = items;
           }

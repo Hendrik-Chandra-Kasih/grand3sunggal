@@ -153,7 +153,7 @@ const RekapAbsensi = () => {
                   <div className={styles.jadwalCardHeader}>
                     <div className={styles.jadwalInfo}>
                       <span className={styles.jadwalMapel}>{jadwal.nama_mapel || '-'}</span>
-                      <span className={styles.jadwalBadgeHari}>{jadwal.hari}</span>
+                      <span className={styles.jadwalBadgeHari}>{Array.isArray(jadwal.hari) ? jadwal.hari.join(', ') : jadwal.hari}</span>
                       <span className={styles.jadwalJam}>
                         {formatJam(jadwal.jam)}{jadwal.jam_selesai ? ` - ${formatJam(jadwal.jam_selesai)}` : ''}
                       </span>
@@ -206,7 +206,10 @@ const RekapAbsensi = () => {
                         {/* Group days into weeks */}
                         {(() => {
                           const weeks = [];
-                          const dayIndex = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].indexOf(jadwal.hari);
+                          const dayNameToDow = { Minggu: 0, Senin: 1, Selasa: 2, Rabu: 3, Kamis: 4, Jumat: 5, Sabtu: 6 };
+                          const hariArr = Array.isArray(jadwal.hari) ? jadwal.hari : [jadwal.hari];
+                          const dayIndexes = hariArr.map((h) => dayNameToDow[h]).filter((i) => i >= 0);
+                          const dayIndex = dayIndexes[0] ?? 0;
                           const dayMap = {};
                           jadwal.days.forEach((d) => { dayMap[d.day] = d.status; });
 
@@ -260,7 +263,7 @@ const RekapAbsensi = () => {
           {activeJadwal && (
             <div className={styles.tableCard}>
               <h3 className={styles.tableTitle}>
-                Detail — {activeJadwal.nama_mapel || '-'} ({activeJadwal.hari})
+                Detail — {activeJadwal.nama_mapel || '-'} ({Array.isArray(activeJadwal.hari) ? activeJadwal.hari.join(', ') : activeJadwal.hari})
               </h3>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>

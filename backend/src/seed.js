@@ -2,8 +2,7 @@ import 'dotenv/config';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
-const HARI_MAP_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-const MONTHS_ID = [
+const MONTHS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
@@ -16,347 +15,490 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'grand3sunggal',
   waitForConnections: true,
   connectionLimit: 5,
+  multipleStatements: false,
 });
 
-const toMySQLDate = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
+const toDate = (d) => {
+  const dt = d instanceof Date ? d : new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+};
+
+const toDateTime = (d) => {
+  const dt = d instanceof Date ? d : new Date(d);
   const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
 };
 
-const toMySQLDateTime = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-};
-
-
-const upsert = async (conn, sql, params) => {
-  const [result] = await conn.execute(sql, params);
-  return result.insertId ?? null;
-};
-
+// ─── helpers ─────────────────────────────────────────────────
 const findUserId = async (conn, username) => {
-  const [rows] = await conn.execute(
-    'SELECT id_user FROM users WHERE username = ? LIMIT 1',
-    [username]
-  );
+  const [rows] = await conn.execute('SELECT id_user FROM users WHERE username = ? LIMIT 1', [username]);
   return rows[0]?.id_user || null;
 };
 
-const findSiswaId = async (conn, idUser) => {
-  const [rows] = await conn.execute(
-    'SELECT id_siswa FROM siswa WHERE id_user = ? LIMIT 1',
-    [idUser]
-  );
-  return rows[0]?.id_siswa || null;
-};
-
-const findTutorId = async (conn, idUser) => {
-  const [rows] = await conn.execute(
-    'SELECT id_tutor FROM tutor WHERE id_user = ? LIMIT 1',
-    [idUser]
-  );
+const findTutorId = async (conn, userId) => {
+  const [rows] = await conn.execute('SELECT id_tutor FROM tutor WHERE id_user = ? LIMIT 1', [userId]);
   return rows[0]?.id_tutor || null;
 };
 
-const findKelasId = async (conn, namaKelas) => {
-  const [rows] = await conn.execute(
-    'SELECT id_kelas FROM kelas WHERE nama_kelas = ? LIMIT 1',
-    [namaKelas]
-  );
-  return rows[0]?.id_kelas || null;
+const findSiswaId = async (conn, userId) => {
+  const [rows] = await conn.execute('SELECT id_siswa FROM siswa WHERE id_user = ? LIMIT 1', [userId]);
+  return rows[0]?.id_siswa || null;
 };
 
-const findMapelId = async (conn, namaMapel) => {
-  const [rows] = await conn.execute(
-    'SELECT id_mapel FROM mapel WHERE nama_mapel = ? LIMIT 1',
-    [namaMapel]
-  );
+const findMapelId = async (conn, nama) => {
+  const [rows] = await conn.execute('SELECT id_mapel FROM mapel WHERE nama_mapel = ? LIMIT 1', [nama]);
   return rows[0]?.id_mapel || null;
 };
 
 const nextId = async (conn, table, pk) => {
-  const [rows] = await conn.execute(
-    `SELECT COALESCE(MAX(\`${pk}\`), 0) + 1 AS next_id FROM \`${table}\``
-  );
-  return Number(rows[0]?.next_id) || 1;
+  const [rows] = await conn.execute(`SELECT COALESCE(MAX(\`${pk}\`), 0) + 1 AS n FROM \`${table}\``);
+  return Number(rows[0]?.n) || 1;
 };
 
+// ─── main seed ───────────────────────────────────────────────
 async function main() {
-  console.log('Start seeding...');
+  console.log('🚀 Start seeding...\n');
 
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const ownerPassword = await bcrypt.hash('owner123', 10);
-  const tutorPassword = await bcrypt.hash('tutor123', 10);
-  const siswaPassword = await bcrypt.hash('siswa123', 10);
-
+  const password = await bcrypt.hash('password123', 10);
   const conn = await pool.getConnection();
+
   try {
     await conn.beginTransaction();
 
-    let adminId = await findUserId(conn, 'admin');
-    if (!adminId) {
-      adminId = await nextId(conn, 'users', 'id_user');
-      await conn.execute(
-        'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
-        [adminId, 'admin', adminPassword, 'admin']
-      );
-      console.log(`✔ admin user (id: ${adminId})`);
-    } else {
-      console.log(`✔ admin user (id: ${adminId}, exists)`);
-    }
-
-    let ownerId = await findUserId(conn, 'owner');
-    if (!ownerId) {
-      ownerId = await nextId(conn, 'users', 'id_user');
-      await conn.execute(
-        'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
-        [ownerId, 'owner', ownerPassword, 'pemilik']
-      );
-      console.log(`✔ owner user (id: ${ownerId})`);
-    } else {
-      console.log(`✔ owner user (id: ${ownerId}, exists)`);
-    }
-
-    await conn.execute('DELETE FROM absensi_siswa');
-    await conn.execute('DELETE FROM kelas_siswa');
-    await conn.execute('DELETE FROM jadwal');
-    await conn.execute('DELETE FROM kelas');
-    await conn.execute('DELETE FROM mapel');
-
-    const mapelData = [
-      'SD',
-      'SMP',
-      'SMA',
-      'Calistung',
-      'MAFIA',
+    // ══════════════════════════════════════════════════════════
+    // 1. Users
+    // ══════════════════════════════════════════════════════════
+    const userSeed = [
+      { username: 'admin', role: 'admin' },
+      { username: 'owner', role: 'pemilik' },
+      { username: 'budi.setiawan', role: 'tutor' },
+      { username: 'ani.wijaya', role: 'tutor' },
+      { username: 'candra.putra', role: 'tutor' },
+      { username: 'dewi.lestari', role: 'tutor' },
+      { username: 'rizky.pratama', role: 'siswa' },
+      { username: 'siti.aminah', role: 'siswa' },
+      { username: 'andi.saputra', role: 'siswa' },
+      { username: 'aisyah.putri', role: 'siswa' },
+      { username: 'budi.santoso', role: 'siswa' },
+      { username: 'citra.dewi', role: 'siswa' },
+      { username: 'dimas.ari', role: 'siswa' },
+      { username: 'eka.putri', role: 'siswa' },
+      { username: 'fajar.nugraha', role: 'siswa' },
+      { username: 'gita.lestari', role: 'siswa' },
+      { username: 'hendra.wijaya', role: 'siswa' },
+      { username: 'intan.permata', role: 'siswa' },
     ];
 
-    const mapel = [];
-    for (const namaMapel of mapelData) {
-      const mapelId = await nextId(conn, 'mapel', 'id_mapel');
-      await conn.execute(
-        'INSERT INTO mapel (id_mapel, nama_mapel) VALUES (?, ?)',
-        [mapelId, namaMapel]
-      );
-      mapel.push({ id_mapel: mapelId, nama_mapel: namaMapel });
+    const userIdMap = {};
+    for (const u of userSeed) {
+      let id = await findUserId(conn, u.username);
+      if (!id) {
+        id = await nextId(conn, 'users', 'id_user');
+        await conn.execute(
+          'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
+          [id, u.username, password, u.role]
+        );
+      }
+      userIdMap[u.username] = id;
     }
-    console.log(`✔ ${mapel.length} mapel`);
+    console.log(`✔ users: ${Object.keys(userIdMap).length}`);
 
-    const mapelId = (name) => mapel.find((m) => m.nama_mapel === name)?.id_mapel;
+    // ══════════════════════════════════════════════════════════
+    // 2. Mapel
+    // ══════════════════════════════════════════════════════════
+    const mapelName = ['SD', 'SMP', 'SMA', 'Calistung', 'MAFIA'];
+    const mapelIds = {};
+    for (const nama of mapelName) {
+      let id = await findMapelId(conn, nama);
+      if (!id) {
+        id = await nextId(conn, 'mapel', 'id_mapel');
+        await conn.execute('INSERT INTO mapel (id_mapel, nama_mapel) VALUES (?, ?)', [id, nama]);
+      }
+      mapelIds[nama] = id;
+    }
+    console.log(`✔ mapel: ${Object.keys(mapelIds).length}`);
+
+    // ══════════════════════════════════════════════════════════
+    // 3. Tutor — semua field nullable diisi
+    // ══════════════════════════════════════════════════════════
+    const tutorData = [
+      { username: 'budi.setiawan', nama: 'Budi Setiawan', jk: 'L', hp: '081234567001',
+        tempat_lahir: 'Medan', tanggal_lahir: '1990-03-15', alamat: 'Jl. Melati No.12, Medan',
+        pendidikan: 'S1 Pendidikan Matematika', mapel: ['SD', 'SMP'] },
+      { username: 'ani.wijaya', nama: 'Ani Wijaya', jk: 'P', hp: '081234567002',
+        tempat_lahir: 'Jakarta', tanggal_lahir: '1992-07-22', alamat: 'Jl. Mawar No.8, Sunggal',
+        pendidikan: 'S1 Pendidikan Bahasa Inggris', mapel: ['SMA', 'SD'] },
+      { username: 'candra.putra', nama: 'Candra Putra', jk: 'L', hp: '081234567003',
+        tempat_lahir: 'Bandung', tanggal_lahir: '1988-11-05', alamat: 'Jl. Anggrek No.3, Sunggal',
+        pendidikan: 'S1 Matematika', mapel: ['MAFIA'] },
+      { username: 'dewi.lestari', nama: 'Dewi Lestari', jk: 'P', hp: '081234567004',
+        tempat_lahir: 'Surabaya', tanggal_lahir: '1995-01-30', alamat: 'Jl. Dahlia No.15, Sunggal',
+        pendidikan: 'S1 PGSD', mapel: ['Calistung', 'SD'] },
+    ];
 
     const tutors = [];
-    const tutorData = [
-      { username: 'budi.setiawan', nama: 'Budi Setiawan', jenis_kelamin: 'L', no_hp: '081234567001', mapel: ['SD', 'SMP'] },
-      { username: 'ani.wijaya', nama: 'Ani Wijaya', jenis_kelamin: 'P', no_hp: '081234567002', mapel: ['SMA', 'SD'] },
-      { username: 'candra.putra', nama: 'Candra Putra', jenis_kelamin: 'L', no_hp: '081234567003', mapel: ['MAFIA'] },
-      { username: 'dewi.lestari', nama: 'Dewi Lestari', jenis_kelamin: 'P', no_hp: '081234567004', mapel: ['Calistung', 'SD'] },
-    ];
-
     for (const t of tutorData) {
-      let userId = await findUserId(conn, t.username);
-      if (!userId) {
-        userId = await nextId(conn, 'users', 'id_user');
+      const uid = userIdMap[t.username];
+      let tid = await findTutorId(conn, uid);
+      if (!tid) {
+        tid = await nextId(conn, 'tutor', 'id_tutor');
+        const mapelJson = JSON.stringify(t.mapel.map((n) => mapelIds[n]).filter(Boolean));
         await conn.execute(
-          'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
-          [userId, t.username, tutorPassword, 'tutor']
+          `INSERT INTO tutor (id_tutor, id_user, nama_tutor, tempat_lahir, tanggal_lahir,
+            jenis_kelamin, alamat, pendidikan, no_hp, tanggal_bergabung, status, mapel)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
+          [tid, uid, t.nama, t.tempat_lahir, t.tanggal_lahir,
+            t.jk, t.alamat, t.pendidikan, t.hp, '2024-01-15', mapelJson]
         );
       }
-      let tutorId = await findTutorId(conn, userId);
-      if (!tutorId) {
-        tutorId = await nextId(conn, 'tutor', 'id_tutor');
-        const mapelStr = JSON.stringify(t.mapel.map((name) => mapelId(name)).filter(Boolean));
-        await conn.execute(
-          `INSERT INTO tutor (id_tutor, id_user, nama_tutor, jenis_kelamin, no_hp, tanggal_bergabung, status, mapel)
-           VALUES (?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
-          [tutorId, userId, t.nama, t.jenis_kelamin, t.no_hp, toMySQLDate('2024-01-15'), mapelStr]
-        );
-      }
-      tutors.push({ id_tutor: tutorId, ...t });
+      tutors.push({ id_tutor: tid, ...t });
     }
-    console.log(`✔ ${tutors.length} tutors`);
+    console.log(`✔ tutor: ${tutors.length}`);
+
+    // ══════════════════════════════════════════════════════════
+    // 4. Siswa — semua field nullable diisi
+    // ══════════════════════════════════════════════════════════
+    const siswaData = [
+      { username: 'rizky.pratama', nama: 'Rizky Pratama', jk: 'L',
+        tempat_lahir: 'Medan', tanggal_lahir: '2008-05-10', kelas: '10',
+        asal_sekolah: 'SMA Negeri 1 Medan', alamat: 'Jl. Kenanga No.5, Medan',
+        nama_ortu: 'Sukirman', pekerjaan_ortu: 'PNS', pendidikan_ortu: 'S1',
+        spp: 550000, hp: '081234500001', mapel: ['SMA', 'MAFIA'] },
+      { username: 'siti.aminah', nama: 'Siti Aminah', jk: 'P',
+        tempat_lahir: 'Sunggal', tanggal_lahir: '2014-08-20', kelas: '2 SD',
+        asal_sekolah: 'SD Negeri 1 Sunggal', alamat: 'Jl. Teratai No.3, Sunggal',
+        nama_ortu: 'Suryanto', pekerjaan_ortu: 'Wiraswasta', pendidikan_ortu: 'SMA',
+        spp: 300000, hp: '081234500002', mapel: ['SD', 'Calistung'] },
+      { username: 'andi.saputra', nama: 'Andi Saputra', jk: 'L',
+        tempat_lahir: 'Binjai', tanggal_lahir: '2010-12-03', kelas: '8',
+        asal_sekolah: 'SMP Negeri 2 Binjai', alamat: 'Jl. Flamboyan No.7, Sunggal',
+        nama_ortu: 'Hendro', pekerjaan_ortu: 'Karyawan Swasta', pendidikan_ortu: 'D3',
+        spp: 450000, hp: '081234500003', mapel: ['SMP', 'SD'] },
+      { username: 'aisyah.putri', nama: 'Aisyah Putri', jk: 'P',
+        tempat_lahir: 'Jakarta', tanggal_lahir: '2009-02-14', kelas: '9',
+        asal_sekolah: 'SMP Negeri 5 Sunggal', alamat: 'Jl. Cempaka No.11, Sunggal',
+        nama_ortu: 'Fatimah', pekerjaan_ortu: 'Guru', pendidikan_ortu: 'S1',
+        spp: 400000, hp: '081234500004', mapel: ['SMP'] },
+      { username: 'budi.santoso', nama: 'Budi Santoso', jk: 'L',
+        tempat_lahir: 'Surabaya', tanggal_lahir: '2007-09-18', kelas: '11',
+        asal_sekolah: 'SMA Negeri 3 Medan', alamat: 'Jl. Bougenville No.2, Sunggal',
+        nama_ortu: 'Rahmat', pekerjaan_ortu: 'TNI', pendidikan_ortu: 'S1',
+        spp: 500000, hp: '081234500005', mapel: ['SMA'] },
+      { username: 'citra.dewi', nama: 'Citra Dewi', jk: 'P',
+        tempat_lahir: 'Medan', tanggal_lahir: '2013-11-25', kelas: '3 SD',
+        asal_sekolah: 'SD Negeri 4 Sunggal', alamat: 'Jl. Melati No.20, Sunggal',
+        nama_ortu: 'Indah', pekerjaan_ortu: 'Ibu Rumah Tangga', pendidikan_ortu: 'SMA',
+        spp: 350000, hp: '081234500006', mapel: ['SD'] },
+      { username: 'dimas.ari', nama: 'Dimas Ari', jk: 'L',
+        tempat_lahir: 'Bandung', tanggal_lahir: '2010-06-07', kelas: '8',
+        asal_sekolah: 'SMP Negeri 1 Sunggal', alamat: 'Jl. Sakura No.9, Sunggal',
+        nama_ortu: 'Agus', pekerjaan_ortu: 'Dokter', pendidikan_ortu: 'S2',
+        spp: 450000, hp: '081234500007', mapel: ['SMP', 'MAFIA'] },
+      { username: 'eka.putri', nama: 'Eka Putri', jk: 'P',
+        tempat_lahir: 'Yogyakarta', tanggal_lahir: '2008-01-12', kelas: '10',
+        asal_sekolah: 'SMA Negeri 2 Sunggal', alamat: 'Jl. Asoka No.6, Sunggal',
+        nama_ortu: 'Rini', pekerjaan_ortu: 'Perawat', pendidikan_ortu: 'D3',
+        spp: 500000, hp: '081234500008', mapel: ['SMA', 'SD'] },
+      { username: 'fajar.nugraha', nama: 'Fajar Nugraha', jk: 'L',
+        tempat_lahir: 'Palembang', tanggal_lahir: '2009-07-30', kelas: '9',
+        asal_sekolah: 'SMP Negeri 3 Sunggal', alamat: 'Jl. Tulip No.14, Sunggal',
+        nama_ortu: 'Bambang', pekerjaan_ortu: 'Pengusaha', pendidikan_ortu: 'S1',
+        spp: 400000, hp: '081234500009', mapel: ['SMP'] },
+      { username: 'gita.lestari', nama: 'Gita Lestari', jk: 'P',
+        tempat_lahir: 'Semarang', tanggal_lahir: '2015-04-03', kelas: '1 SD',
+        asal_sekolah: 'SD Negeri 3 Sunggal', alamat: 'Jl. Lili No.18, Sunggal',
+        nama_ortu: 'Dewi', pekerjaan_ortu: 'Apoteker', pendidikan_ortu: 'S1',
+        spp: 350000, hp: '081234500010', mapel: ['SD', 'Calistung'] },
+      { username: 'hendra.wijaya', nama: 'Hendra Wijaya', jk: 'L',
+        tempat_lahir: 'Aceh', tanggal_lahir: '2009-10-22', kelas: '9',
+        asal_sekolah: 'SMP Negeri 4 Sunggal', alamat: 'Jl. Kamboja No.1, Sunggal',
+        nama_ortu: 'Joko', pekerjaan_ortu: 'Petani', pendidikan_ortu: 'SMP',
+        spp: 450000, hp: '081234500011', mapel: ['SMP'] },
+      { username: 'intan.permata', nama: 'Intan Permata', jk: 'P',
+        tempat_lahir: 'Makassar', tanggal_lahir: '2007-12-28', kelas: '11',
+        asal_sekolah: 'SMA Negeri 5 Medan', alamat: 'Jl. Edelweis No.4, Sunggal',
+        nama_ortu: 'Slamet', pekerjaan_ortu: 'Polisi', pendidikan_ortu: 'S1',
+        spp: 500000, hp: '081234500012', mapel: ['SMA', 'MAFIA'] },
+    ];
 
     const siswa = [];
-    const siswaData = [
-      { username: 'rizky.pratama', nama: 'Rizky Pratama', spp: 550000, no_hp_ortu: '081234500001', mapel: ['SMA', 'MAFIA'] },
-      { username: 'siti.aminah', nama: 'Siti Aminah', spp: 300000, no_hp_ortu: '081234500002', mapel: ['SD', 'Calistung'] },
-      { username: 'andi.saputra', nama: 'Andi Saputra', spp: 450000, no_hp_ortu: '081234500003', mapel: ['SMP', 'SD'] },
-      { username: 'aisyah.putri', nama: 'Aisyah Putri', spp: 400000, no_hp_ortu: '081234500004', mapel: ['SMP'] },
-      { username: 'budi.santoso', nama: 'Budi Santoso', spp: 500000, no_hp_ortu: '081234500005', mapel: ['SMA'] },
-      { username: 'citra.dewi', nama: 'Citra Dewi', spp: 350000, no_hp_ortu: '081234500006', mapel: ['SD'] },
-      { username: 'dimas.ari', nama: 'Dimas Ari', spp: 450000, no_hp_ortu: '081234500007', mapel: ['SMP', 'MAFIA'] },
-      { username: 'eka.putri', nama: 'Eka Putri', spp: 500000, no_hp_ortu: '081234500008', mapel: ['SMA', 'SD'] },
-      { username: 'fajar.nugraha', nama: 'Fajar Nugraha', spp: 400000, no_hp_ortu: '081234500009', mapel: ['SMP'] },
-      { username: 'gita.lestari', nama: 'Gita Lestari', spp: 350000, no_hp_ortu: '081234500010', mapel: ['SD', 'Calistung'] },
-      { username: 'hendra.wijaya', nama: 'Hendra Wijaya', spp: 450000, no_hp_ortu: '081234500011', mapel: ['SMP'] },
-      { username: 'intan.permata', nama: 'Intan Permata', spp: 500000, no_hp_ortu: '081234500012', mapel: ['SMA', 'MAFIA'] },
-    ];
-
     for (const s of siswaData) {
-      let userId = await findUserId(conn, s.username);
-      if (!userId) {
-        userId = await nextId(conn, 'users', 'id_user');
+      const uid = userIdMap[s.username];
+      let sid = await findSiswaId(conn, uid);
+      if (!sid) {
+        sid = await nextId(conn, 'siswa', 'id_siswa');
+        const mapelJson = JSON.stringify(s.mapel.map((n) => mapelIds[n]).filter(Boolean));
         await conn.execute(
-          'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
-          [userId, s.username, siswaPassword, 'siswa']
+          `INSERT INTO siswa (id_siswa, id_user, nama, tempat_lahir, tanggal_lahir,
+            jenis_kelamin, kelas, mapel, asal_sekolah, alamat, tanggal_masuk,
+            nama_ortu, pekerjaan_ortu, no_hp_ortu, pendidikan_ortu, spp, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktif')`,
+          [sid, uid, s.nama, s.tempat_lahir, s.tanggal_lahir,
+            s.jk, s.kelas, mapelJson, s.asal_sekolah, s.alamat, '2024-08-01',
+            s.nama_ortu, s.pekerjaan_ortu, s.hp, s.pendidikan_ortu, s.spp]
         );
       }
-      let siswaId = await findSiswaId(conn, userId);
-      if (!siswaId) {
-        siswaId = await nextId(conn, 'siswa', 'id_siswa');
-        const mapelStr = JSON.stringify(s.mapel.map((name) => mapelId(name)).filter(Boolean));
-        await conn.execute(
-          `INSERT INTO siswa (id_siswa, id_user, nama, spp, no_hp_ortu, tanggal_masuk, status, mapel)
-           VALUES (?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
-          [siswaId, userId, s.nama, s.spp, s.no_hp_ortu, toMySQLDate('2024-08-01'), mapelStr]
-        );
-      }
-      siswa.push({ id_siswa: siswaId, ...s });
+      siswa.push({ id_siswa: sid, ...s });
     }
-    console.log(`✔ ${siswa.length} siswa`);
+    console.log(`✔ siswa: ${siswa.length}`);
+
+    // ══════════════════════════════════════════════════════════
+    // 5. Kelas — id_tutor NOT NULL (semua kelas punya tutor)
+    // ══════════════════════════════════════════════════════════
+    const kelasData = [
+      { nama: 'SD A1', mapel: 'SD', tutor: 0 },
+      { nama: 'SMP B1', mapel: 'SMP', tutor: 1 },
+      { nama: 'SMA C1', mapel: 'SMA', tutor: 1 },
+      { nama: 'Calistung D1', mapel: 'Calistung', tutor: 3 },
+      { nama: 'MAFIA E1', mapel: 'MAFIA', tutor: 2 },
+    ];
 
     const kelas = [];
-    const kelasData = [
-      { nama_kelas: 'SD A1', nama_mapel: 'SD', id_tutor: tutors[0].id_tutor },
-      { nama_kelas: 'SMP B1', nama_mapel: 'SMP', id_tutor: tutors[1].id_tutor },
-      { nama_kelas: 'SMA C1', nama_mapel: 'SMA', id_tutor: tutors[2].id_tutor },
-      { nama_kelas: 'Calistung D1', nama_mapel: 'Calistung', id_tutor: tutors[3].id_tutor },
-      { nama_kelas: 'MAFIA E1', nama_mapel: 'MAFIA', id_tutor: tutors[2].id_tutor },
-    ];
-
     for (const k of kelasData) {
-      let kelasId = await findKelasId(conn, k.nama_kelas);
-      const mapelId = await findMapelId(conn, k.nama_mapel);
-      if (!kelasId) {
-        kelasId = await nextId(conn, 'kelas', 'id_kelas');
-        await conn.execute(
-          'INSERT INTO kelas (id_kelas, nama_kelas, id_mapel, id_tutor) VALUES (?, ?, ?, ?)',
-          [kelasId, k.nama_kelas, mapelId, k.id_tutor]
-        );
+      const [chk] = await conn.execute('SELECT id_kelas FROM kelas WHERE nama_kelas = ? LIMIT 1', [k.nama]);
+      let kid = chk[0]?.id_kelas;
+      if (kid) {
+        await conn.execute('UPDATE kelas SET id_mapel = ?, id_tutor = ? WHERE id_kelas = ?',
+          [mapelIds[k.mapel], tutors[k.tutor].id_tutor, kid]);
       } else {
-        await conn.execute(
-          'UPDATE kelas SET id_mapel = ?, id_tutor = ? WHERE id_kelas = ?',
-          [mapelId, k.id_tutor, kelasId]
-        );
+        kid = await nextId(conn, 'kelas', 'id_kelas');
+        await conn.execute('INSERT INTO kelas (id_kelas, nama_kelas, id_mapel, id_tutor) VALUES (?, ?, ?, ?)',
+          [kid, k.nama, mapelIds[k.mapel], tutors[k.tutor].id_tutor]);
       }
-      kelas.push({ id_kelas: kelasId, id_mapel: mapelId, ...k });
+      kelas.push({ id_kelas: kid, ...k });
     }
-    console.log(`✔ ${kelas.length} kelas`);
+    console.log(`✔ kelas: ${kelas.length}`);
 
-    const today = new Date();
-    const todayName = HARI_MAP_ID[today.getDay()];
+    // ══════════════════════════════════════════════════════════
+    // 6. Kelas_siswa — enroll sesuai kecocokan mapel
+    // ══════════════════════════════════════════════════════════
+    let enrollCount = 0;
+    for (const s of siswaData) {
+      for (const k of kelasData) {
+        const match = s.mapel.some((ms) => ms === k.mapel);
+        if (!match) continue;
 
-    await conn.execute('DELETE FROM jadwal');
+        const sid = siswa.find((x) => x.username === s.username)?.id_siswa;
+        const kid = kelas.find((x) => x.nama === k.nama)?.id_kelas;
+        if (!sid || !kid) continue;
+
+        const [dup] = await conn.execute(
+          'SELECT id_kelas_siswa FROM kelas_siswa WHERE id_siswa = ? AND id_kelas = ? LIMIT 1',
+          [sid, kid]
+        );
+        if (dup.length > 0) continue;
+
+        const ksId = await nextId(conn, 'kelas_siswa', 'id_kelas_siswa');
+        await conn.execute('INSERT INTO kelas_siswa (id_kelas_siswa, id_siswa, id_kelas) VALUES (?, ?, ?)',
+          [ksId, sid, kid]);
+        enrollCount++;
+      }
+    }
+    console.log(`✔ enrollments: ${enrollCount}`);
+
+    // ══════════════════════════════════════════════════════════
+    // 7. Jadwal — hari = JSON array Senin–Jumat, + jam_selesai
+    // ══════════════════════════════════════════════════════════
+    const addJam = (jam, durasiJam = 1, durasiMenit = 30) => {
+      const [h, m] = jam.split(':').map(Number);
+      const totalMenit = h * 60 + m + durasiJam * 60 + durasiMenit;
+      const jj = String(Math.floor(totalMenit / 60)).padStart(2, '0');
+      const mm = String(totalMenit % 60).padStart(2, '0');
+      return `${jj}:${mm}:00`;
+    };
 
     const jadwalData = [
-      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, id_mapel: kelas[0].id_mapel, hari: todayName, jam: '14:00:00' },
-      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, id_mapel: kelas[1].id_mapel, hari: todayName, jam: '15:00:00' },
-      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[2].id_mapel, hari: todayName, jam: '16:00:00' },
-      { id_kelas: kelas[3].id_kelas, id_tutor: tutors[3].id_tutor, id_mapel: kelas[3].id_mapel, hari: todayName, jam: '17:00:00' },
-      { id_kelas: kelas[4].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[4].id_mapel, hari: todayName, jam: '18:00:00' },
-      { id_kelas: kelas[0].id_kelas, id_tutor: tutors[0].id_tutor, id_mapel: kelas[0].id_mapel, hari: 'Senin',  jam: '14:00:00' },
-      { id_kelas: kelas[1].id_kelas, id_tutor: tutors[1].id_tutor, id_mapel: kelas[1].id_mapel, hari: 'Selasa', jam: '15:00:00' },
-      { id_kelas: kelas[2].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[2].id_mapel, hari: 'Rabu',   jam: '16:00:00' },
-      { id_kelas: kelas[3].id_kelas, id_tutor: tutors[3].id_tutor, id_mapel: kelas[3].id_mapel, hari: 'Kamis',  jam: '17:00:00' },
-      { id_kelas: kelas[4].id_kelas, id_tutor: tutors[2].id_tutor, id_mapel: kelas[4].id_mapel, hari: 'Jumat',  jam: '18:00:00' },
+      { kelas: 0, tutor: 0, mapel: 'SD', hari: ['Senin', 'Rabu'], jam: '14:00:00' },
+      { kelas: 1, tutor: 1, mapel: 'SMP', hari: ['Senin', 'Selasa'], jam: '15:00:00' },
+      { kelas: 2, tutor: 1, mapel: 'SMA', hari: ['Selasa', 'Kamis'], jam: '16:00:00' },
+      { kelas: 3, tutor: 3, mapel: 'Calistung', hari: ['Rabu', 'Jumat'], jam: '13:00:00' },
+      { kelas: 4, tutor: 2, mapel: 'MAFIA', hari: ['Jumat'], jam: '17:00:00' },
+      { kelas: 0, tutor: 0, mapel: 'SD', hari: ['Kamis'], jam: '14:00:00' },
+      { kelas: 2, tutor: 1, mapel: 'SMA', hari: ['Senin'], jam: '10:00:00' },
     ];
 
+    const jadwalIds = [];
     for (const j of jadwalData) {
-      const idJadwal = await nextId(conn, 'jadwal', 'id_jadwal');
+      const jid = await nextId(conn, 'jadwal', 'id_jadwal');
+      const jamSelesai = addJam(j.jam);
       await conn.execute(
-        'INSERT INTO jadwal (id_jadwal, id_kelas, id_tutor, id_mapel, hari, jam) VALUES (?, ?, ?, ?, ?, ?)',
-        [idJadwal, j.id_kelas, j.id_tutor, j.id_mapel, j.hari, j.jam]
+        `INSERT INTO jadwal (id_jadwal, id_kelas, id_tutor, id_mapel, hari, jam, jam_selesai)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [jid, kelas[j.kelas].id_kelas, tutors[j.tutor].id_tutor, mapelIds[j.mapel],
+          JSON.stringify(j.hari), j.jam, jamSelesai]
       );
+      jadwalIds.push(jid);
     }
-    console.log(`✔ jadwal seeded (hari ini: ${todayName})`);
+    console.log(`✔ jadwal: ${jadwalIds.length}`);
 
-    let enrollments = 0;
-    for (const s of siswa) {
-      for (const k of kelas) {
-        const [exists] = await conn.execute(
-          'SELECT id_kelas_siswa FROM kelas_siswa WHERE id_siswa = ? AND id_kelas = ? LIMIT 1',
-          [s.id_siswa, k.id_kelas]
+    // ══════════════════════════════════════════════════════════
+    // 8. Absensi_siswa — hari ini, random status, + confirmed
+    // ══════════════════════════════════════════════════════════
+    const today = new Date();
+    const todayStr = toDate(today);
+    const statusPool = ['Hadir', 'Hadir', 'Hadir', 'Tidak Hadir', 'Sakit', 'Izin'];
+
+    // ambil id admin untuk confirmed_by
+    const adminId = userIdMap['admin'];
+
+    let absensiSiswaCount = 0;
+    for (let ji = 0; ji < jadwalData.length; ji++) {
+      const j = jadwalData[ji];
+      const kid = kelas[j.kelas].id_kelas;
+      const [enrolled] = await conn.execute('SELECT id_siswa FROM kelas_siswa WHERE id_kelas = ?', [kid]);
+
+      for (const row of enrolled) {
+        const dow = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][today.getDay()];
+        if (!j.hari.includes(dow)) continue;
+
+        const [dup] = await conn.execute(
+          'SELECT id_absensi FROM absensi_siswa WHERE id_siswa = ? AND tanggal = ? AND id_jadwal IN (SELECT id_jadwal FROM jadwal WHERE id_kelas = ?) LIMIT 1',
+          [row.id_siswa, todayStr, kid]
         );
-        if (exists.length === 0) {
-          const idKs = await nextId(conn, 'kelas_siswa', 'id_kelas_siswa');
-          await conn.execute(
-            'INSERT INTO kelas_siswa (id_kelas_siswa, id_siswa, id_kelas) VALUES (?, ?, ?)',
-            [idKs, s.id_siswa, k.id_kelas]
-          );
-          enrollments++;
-        }
-      }
-    }
-    console.log(`✔ ${enrollments} enrollments baru`);
+        if (dup.length > 0) continue;
 
-    const todayStr = toMySQLDate(today);
-
-    await conn.execute('DELETE FROM absensi_siswa WHERE tanggal = ?', [todayStr]);
-
-    const [jadwalHariIniRows] = await conn.execute(
-      'SELECT id_jadwal, id_kelas, id_mapel FROM jadwal WHERE hari = ?',
-      [todayName]
-    );
-
-    const statusAbsensi = ['Hadir', 'Hadir', 'Hadir', 'Tidak Hadir', 'Sakit', 'Izin'];
-    let absensiCount = 0;
-    for (const j of jadwalHariIniRows) {
-      const [enrolled] = await conn.execute(
-        'SELECT id_siswa FROM kelas_siswa WHERE id_kelas = ?',
-        [j.id_kelas]
-      );
-      for (const ks of enrolled) {
-        const status = statusAbsensi[Math.floor(Math.random() * statusAbsensi.length)];
-        const idAbs = await nextId(conn, 'absensi_siswa', 'id_absensi');
+        const absId = await nextId(conn, 'absensi_siswa', 'id_absensi');
+        const status = statusPool[Math.floor(Math.random() * statusPool.length)];
+        // setengah dikonfirmasi admin
+        const isConfirmed = Math.random() > 0.5;
         await conn.execute(
           `INSERT INTO absensi_siswa
-            (id_absensi, id_siswa, id_jadwal, tanggal, pertemuan, status, id_mapel, is_confirmed)
-           VALUES (?, ?, ?, ?, 1, ?, ?, 0)`,
-          [idAbs, ks.id_siswa, j.id_jadwal, todayStr, status, j.id_mapel]
+            (id_absensi, id_siswa, id_jadwal, tanggal, pertemuan, status, id_mapel,
+             is_confirmed, confirmed_at, confirmed_by)
+           VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+          [absId, row.id_siswa, jadwalIds[ji], todayStr, status, mapelIds[j.mapel],
+            isConfirmed ? 1 : 0,
+            isConfirmed ? todayStr : null,
+            isConfirmed ? adminId : null]
         );
-        absensiCount++;
+        absensiSiswaCount++;
       }
     }
-    console.log(`✔ ${absensiCount} absensi siswa hari ini (semua belum dikonfirmasi)`);
+    console.log(`✔ absensi_siswa hari ini: ${absensiSiswaCount}`);
 
-    await conn.execute('DELETE FROM pembayaran');
+    // ══════════════════════════════════════════════════════════
+    // 9. Absensi_tutor — 5 hari terakhir
+    // ══════════════════════════════════════════════════════════
+    let absenTutorCount = 0;
+    for (const t of tutors) {
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const [dup] = await conn.execute(
+          'SELECT id_absensi_tutor FROM absensi_tutor WHERE id_tutor = ? AND tanggal = ? LIMIT 1',
+          [t.id_tutor, toDate(d)]
+        );
+        if (dup.length > 0) continue;
+        const atId = await nextId(conn, 'absensi_tutor', 'id_absensi_tutor');
+        await conn.execute(
+          'INSERT INTO absensi_tutor (id_absensi_tutor, id_tutor, tanggal, status) VALUES (?, ?, ?, ?)',
+          [atId, t.id_tutor, toDate(d), Math.random() > 0.2 ? 'Hadir' : 'Absen']
+        );
+        absenTutorCount++;
+      }
+    }
+    console.log(`✔ absensi_tutor: ${absenTutorCount}`);
 
-    const currentMonth = `${MONTHS_ID[today.getMonth()]} ${today.getFullYear()}`;
-    const todayDateTime = toMySQLDateTime(today);
+    // ══════════════════════════════════════════════════════════
+    // 10. Pembayaran — semua field diisi termasuk catatan
+    // ══════════════════════════════════════════════════════════
+    const currentMonth = `${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
 
+    const catatanPending = [
+      'Menunggu konfirmasi admin', 'Pembayaran via transfer', 'Baru melakukan pembayaran',
+      'Cek mutasi bank', 'Tunggu verifikasi bendahara', 'Pembayaran tunai diterima TU',
+      'Belum ada konfirmasi dari bank', 'Sudah transfer, menunggu verifikasi',
+    ];
+    const catatanVerified = [
+      'Pembayaran lunas', 'Sudah diverifikasi oleh admin', 'Lunas, tidak ada tunggakan',
+      'Pembayaran tepat waktu',
+    ];
+
+    let bayarCount = 0;
+    // 8 Pending
     for (let i = 0; i < Math.min(8, siswa.length); i++) {
       const s = siswa[i];
-      const idBayar = await nextId(conn, 'pembayaran', 'id_pembayaran');
-      const tanggalBayar = toMySQLDateTime(
-        new Date(today.getTime() - Math.floor(Math.random() * 5) * 86400000)
-      );
+      const tgl = new Date(today);
+      tgl.setDate(tgl.getDate() - Math.floor(Math.random() * 5));
+      const id = await nextId(conn, 'pembayaran', 'id_pembayaran');
       const metode = Math.random() > 0.5 ? 'Transfer' : 'Tunai';
+      const catatan = catatanPending[i % catatanPending.length];
       await conn.execute(
-        `INSERT INTO pembayaran
-          (id_pembayaran, id_siswa, bulan, tanggal_bayar, jenis_pembayaran, jumlah, metode_pembayaran, diskon, status)
-         VALUES (?, ?, ?, ?, 'SPP', ?, ?, 0, 'Pending')`,
-        [idBayar, s.id_siswa, currentMonth, tanggalBayar, s.spp, metode]
+        `INSERT INTO pembayaran (id_pembayaran, id_siswa, bulan, tanggal_bayar,
+          jenis_pembayaran, jumlah, metode_pembayaran, diskon, status, catatan)
+         VALUES (?, ?, ?, ?, 'SPP', ?, ?, 0, 'Pending', ?)`,
+        [id, s.id_siswa, currentMonth, toDate(tgl), s.spp, metode, catatan]
       );
+      bayarCount++;
     }
-
+    // 4 Verified
     for (let i = 8; i < Math.min(12, siswa.length); i++) {
       const s = siswa[i];
-      const idBayar = await nextId(conn, 'pembayaran', 'id_pembayaran');
-      const tanggalBayar = toMySQLDateTime(
-        new Date(today.getTime() - Math.floor(Math.random() * 5) * 86400000)
-      );
+      const tgl = new Date(today);
+      tgl.setDate(tgl.getDate() - Math.floor(Math.random() * 5));
+      const id = await nextId(conn, 'pembayaran', 'id_pembayaran');
+      const catatan = catatanVerified[(i - 8) % catatanVerified.length];
       await conn.execute(
-        `INSERT INTO pembayaran
-          (id_pembayaran, id_siswa, bulan, tanggal_bayar, jenis_pembayaran, jumlah, metode_pembayaran, diskon, status, tanggal_verifikasi)
-         VALUES (?, ?, ?, ?, 'SPP', ?, 'Transfer', 0, 'Verified', ?)`,
-        [idBayar, s.id_siswa, currentMonth, tanggalBayar, s.spp, todayDateTime]
+        `INSERT INTO pembayaran (id_pembayaran, id_siswa, bulan, tanggal_bayar,
+          jenis_pembayaran, jumlah, metode_pembayaran, diskon, status,
+          tanggal_verifikasi, catatan)
+         VALUES (?, ?, ?, ?, 'SPP', ?, 'Transfer', 0, 'Verified', ?, ?)`,
+        [id, s.id_siswa, currentMonth, toDate(tgl), s.spp, toDate(today), catatan]
+      );
+      bayarCount++;
+    }
+    console.log(`✔ pembayaran: ${bayarCount} (8 Pending, 4 Verified)`);
+
+    // ══════════════════════════════════════════════════════════
+    // 11. Gaji_tutor
+    // ══════════════════════════════════════════════════════════
+    const periodeDt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01 00:00:00`;
+    for (const t of tutors) {
+      const [dup] = await conn.execute(
+        'SELECT id_gaji FROM gaji_tutor WHERE id_tutor = ? AND periode = ? LIMIT 1',
+        [t.id_tutor, periodeDt]
+      );
+      if (dup.length > 0) continue;
+
+      const gid = await nextId(conn, 'gaji_tutor', 'id_gaji');
+      const pemasukan = Math.floor(Math.random() * 1000000) + 500000;
+      const potongan = Math.floor(pemasukan * 0.1);
+      const bonus = Math.floor(Math.random() * 150000);
+      const total = pemasukan - potongan + bonus;
+      await conn.execute(
+        `INSERT INTO gaji_tutor (id_gaji, id_tutor, periode, total_pemasukan, potongan,
+          bonus, total_infal, total_gaji, status_gaji)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'Draft')`,
+        [gid, t.id_tutor, periodeDt, pemasukan, potongan, bonus, total]
       );
     }
-    console.log(`✔ 8 pembayaran Pending, 4 pembayaran Verified`);
+    console.log(`✔ gaji_tutor: ${tutors.length}`);
 
+    // ══════════════════════════════════════════════════════════
+    // 12. App_settings
+    // ══════════════════════════════════════════════════════════
+    const settingsData = [
+      ['bonus_kehadiran_enabled', 'true', 'Aktifkan bonus kehadiran'],
+      ['bonus_kehadiran_nominal', '65000', 'Nominal bonus kehadiran per bulan'],
+      ['bonus_kehadiran_maks_absen', '2', 'Maks absen agar tetap dapat bonus'],
+      ['infal_enabled', 'true', 'Aktifkan fitur infal'],
+      ['infal_nominal', '15000', 'Nominal per infal'],
+      ['persentase_gaji_tutor', '40', 'Persentase gaji dari total SPP'],
+      ['hari_kerja_per_bulan', '20', 'Hari kerja normal per bulan'],
+    ];
+
+    for (const [key, val, desc] of settingsData) {
+      await conn.execute(
+        `INSERT INTO app_settings (setting_key, setting_value, description)
+         VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+        [key, val, desc]
+      );
+    }
+    console.log(`✔ app_settings: ${settingsData.length}`);
+
+    // commit
     await conn.commit();
-    console.log('Seeding finished.');
+    console.log('\n✅ Seeding finished.');
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -367,7 +509,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -74,7 +74,10 @@ const TutorDashboard = () => {
       // Jadwal hari ini
       if (jadwalRes.data?.success) {
         const all = jadwalRes.data.data || [];
-        setJadwalHariIni(all.filter((j) => j.hari === hariIni));
+        setJadwalHariIni(all.filter((j) => {
+          const days = Array.isArray(j.hari) ? j.hari : [j.hari];
+          return days.includes(hariIni);
+        }));
       }
 
       // Kehadiran

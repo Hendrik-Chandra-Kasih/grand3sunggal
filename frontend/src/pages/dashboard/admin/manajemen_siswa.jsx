@@ -18,6 +18,21 @@ const STATUS_OPTIONS = [
   { value: 'Nonaktif', label: 'Nonaktif' },
 ];
 
+const TINGKATAN_KELAS = [
+  'Kelas I',
+  'Kelas II',
+  'Kelas III',
+  'Kelas IV',
+  'Kelas V',
+  'Kelas VI',
+  'Kelas VII',
+  'Kelas VIII',
+  'Kelas IX',
+  'Kelas X',
+  'Kelas XI',
+  'Kelas XII',
+];
+
 const formatRupiah = (value) => {
   const num = Number(value) || 0;
   return `Rp ${num.toLocaleString('en-US')}`;
@@ -70,6 +85,7 @@ const initialEditForm = {
   status: 'Aktif',
   spp: '',
   mapel: [],
+  no_hp_ortu: '',
 };
 
 const ManajemenSiswa = () => {
@@ -199,6 +215,7 @@ const ManajemenSiswa = () => {
       status: siswa.status || 'Aktif',
       spp: formatNumericInput(siswa.spp ?? 0),
       mapel: parseMapelIds(siswa.mapel),
+      no_hp: siswa.no_hp || '',
     });
     setEditSelectedKelas([]);
     setEditError(null);
@@ -271,6 +288,8 @@ const ManajemenSiswa = () => {
         spp: parseNumericInput(editForm.spp),
         mapel: JSON.stringify(editForm.mapel),
         id_kelas: editSelectedKelas,
+        kelas: editForm.kelas,
+        no_hp_ortu: editForm.no_hp_ortu,
       };
       const response = await api.put(`/siswa/${editingSiswa.id_siswa}`, payload);
       const updated = response.data?.data;
@@ -633,6 +652,45 @@ const ManajemenSiswa = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {}
+              <div className={styles.fieldRow}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="edit-kelas">
+                    Kelas (Bangku Sekolah)
+                  </label>
+                  <select
+                    id="edit-kelas"
+                    name="kelas"
+                    className={styles.input}
+                    value={editForm.kelas}
+                    onChange={handleEditChange}
+                    disabled={saving}
+                  >
+                    <option value="">Pilih Kelas</option>
+                    {TINGKATAN_KELAS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="edit-no-hp">
+                    No. HP Orang Tua
+                  </label>
+                  <input
+                    id="edit-no-hp"
+                    name="no_hp"
+                    type="text"
+                    className={styles.input}
+                    placeholder="Contoh: 081234500001"
+                    value={editForm.no_hp}
+                    onChange={handleEditChange}
+                    disabled={saving}
+                  />
+                </div>
               </div>
 
               {}

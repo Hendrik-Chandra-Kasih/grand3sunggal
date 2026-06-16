@@ -11,13 +11,11 @@ import api from '../../../services/api';
 import styles from './jadwal.module.css';
 
 const DAY_MAP = {
-  0: 'Minggu',
   1: 'Senin',
   2: 'Selasa',
   3: 'Rabu',
   4: 'Kamis',
   5: 'Jumat',
-  6: 'Sabtu',
 };
 
 const formatJam = (jam) => {
@@ -62,7 +60,10 @@ const Jadwal = () => {
         setTodayName(todayStr);
 
         const todayJadwal = all
-          .filter((j) => j.hari === todayStr)
+          .filter((j) => {
+            const days = Array.isArray(j.hari) ? j.hari : [j.hari];
+            return days.includes(todayStr);
+          })
           .sort((a, b) => (a.jam > b.jam ? 1 : -1));
 
         setAllJadwal(all);
@@ -82,17 +83,22 @@ const Jadwal = () => {
     setTab('hari-ini');
     const todayStr = DAY_MAP[new Date().getDay()];
     const filtered = allJadwal
-      .filter((j) => j.hari === todayStr)
+      .filter((j) => {
+        const days = Array.isArray(j.hari) ? j.hari : [j.hari];
+        return days.includes(todayStr);
+      })
       .sort((a, b) => (a.jam > b.jam ? 1 : -1));
     setJadwalList(filtered);
   };
 
   const switchToAll = () => {
     setTab('semua');
-    const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    const sorted = [...allJadwal].sort(
-      (a, b) => dayOrder.indexOf(a.hari) - dayOrder.indexOf(b.hari) || (a.jam > b.jam ? 1 : -1)
-    );
+    const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+    const sorted = [...allJadwal].sort((a, b) => {
+      const dayA = Array.isArray(a.hari) ? a.hari[0] : a.hari;
+      const dayB = Array.isArray(b.hari) ? b.hari[0] : b.hari;
+      return dayOrder.indexOf(dayA) - dayOrder.indexOf(dayB) || (a.jam > b.jam ? 1 : -1);
+    });
     setJadwalList(sorted);
   };
 

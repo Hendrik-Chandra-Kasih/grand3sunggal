@@ -50,39 +50,25 @@ export class TutorRepository {
          t.no_hp,
          t.tanggal_bergabung,
          t.status,
-         COALESCE(
-           GROUP_CONCAT(DISTINCT m.nama_mapel ORDER BY m.nama_mapel ASC SEPARATOR ', '),
-           t.mapel
-         ) AS mapel,
+         t.mapel,
          t.nama_tutor AS nama,
          COALESCE(u.username, CONCAT('TUTOR-', t.id_tutor)) AS nip,
          COALESCE(
-           GROUP_CONCAT(
-             DISTINCT j.hari
-             ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')
-             SEPARATOR ', '
+           (
+             SELECT GROUP_CONCAT(
+               DISTINCT jt.hari
+               ORDER BY FIELD(jt.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat')
+               SEPARATOR ', '
+             )
+             FROM \`jadwal\` j2
+             JOIN JSON_TABLE(j2.hari, '$[*]' COLUMNS (hari VARCHAR(10) PATH '$')) AS jt
+             WHERE j2.id_tutor = t.id_tutor
            ),
            ''
          ) AS jadwal
        FROM \`${TABLE}\` t
        LEFT JOIN \`users\` u ON u.id_user = t.id_user
-       LEFT JOIN \`jadwal\` j ON j.id_tutor = t.id_tutor
-       LEFT JOIN \`mapel\` m ON FIND_IN_SET(m.id_mapel, REPLACE(REPLACE(REPLACE(t.mapel, '[', ''), ']', ''), ' ', ''))
        ${whereSql}
-       GROUP BY
-         t.id_tutor,
-         t.id_user,
-         u.username,
-         t.nama_tutor,
-         t.tempat_lahir,
-         t.tanggal_lahir,
-         t.jenis_kelamin,
-         t.alamat,
-         t.pendidikan,
-         t.no_hp,
-         t.tanggal_bergabung,
-         t.status,
-         t.mapel
        ORDER BY t.id_tutor DESC`,
       params
     );
@@ -103,39 +89,25 @@ export class TutorRepository {
          t.no_hp,
          t.tanggal_bergabung,
          t.status,
-         COALESCE(
-           GROUP_CONCAT(DISTINCT m.nama_mapel ORDER BY m.nama_mapel ASC SEPARATOR ', '),
-           t.mapel
-         ) AS mapel,
+         t.mapel,
          t.nama_tutor AS nama,
          COALESCE(u.username, CONCAT('TUTOR-', t.id_tutor)) AS nip,
          COALESCE(
-           GROUP_CONCAT(
-             DISTINCT j.hari
-             ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')
-             SEPARATOR ', '
+           (
+             SELECT GROUP_CONCAT(
+               DISTINCT jt.hari
+               ORDER BY FIELD(jt.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat')
+               SEPARATOR ', '
+             )
+             FROM \`jadwal\` j2
+             JOIN JSON_TABLE(j2.hari, '$[*]' COLUMNS (hari VARCHAR(10) PATH '$')) AS jt
+             WHERE j2.id_tutor = t.id_tutor
            ),
            ''
          ) AS jadwal
        FROM \`${TABLE}\` t
        LEFT JOIN \`users\` u ON u.id_user = t.id_user
-       LEFT JOIN \`jadwal\` j ON j.id_tutor = t.id_tutor
-       LEFT JOIN \`mapel\` m ON FIND_IN_SET(m.id_mapel, REPLACE(REPLACE(REPLACE(t.mapel, '[', ''), ']', ''), ' ', ''))
        WHERE t.id_tutor = ?
-       GROUP BY
-         t.id_tutor,
-         t.id_user,
-         u.username,
-         t.nama_tutor,
-         t.tempat_lahir,
-         t.tanggal_lahir,
-         t.jenis_kelamin,
-         t.alamat,
-         t.pendidikan,
-         t.no_hp,
-         t.tanggal_bergabung,
-         t.status,
-         t.mapel
        LIMIT 1`,
       [id]
     );
@@ -156,39 +128,25 @@ export class TutorRepository {
          t.no_hp,
          t.tanggal_bergabung,
          t.status,
-         COALESCE(
-           GROUP_CONCAT(DISTINCT m.nama_mapel ORDER BY m.nama_mapel ASC SEPARATOR ', '),
-           t.mapel
-         ) AS mapel,
+         t.mapel,
          t.nama_tutor AS nama,
          COALESCE(u.username, CONCAT('TUTOR-', t.id_tutor)) AS nip,
          COALESCE(
-           GROUP_CONCAT(
-             DISTINCT j.hari
-             ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')
-             SEPARATOR ', '
+           (
+             SELECT GROUP_CONCAT(
+               DISTINCT jt.hari
+               ORDER BY FIELD(jt.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat')
+               SEPARATOR ', '
+             )
+             FROM \`jadwal\` j2
+             JOIN JSON_TABLE(j2.hari, '$[*]' COLUMNS (hari VARCHAR(10) PATH '$')) AS jt
+             WHERE j2.id_tutor = t.id_tutor
            ),
            ''
          ) AS jadwal
        FROM \`${TABLE}\` t
        LEFT JOIN \`users\` u ON u.id_user = t.id_user
-       LEFT JOIN \`jadwal\` j ON j.id_tutor = t.id_tutor
-       LEFT JOIN \`mapel\` m ON FIND_IN_SET(m.id_mapel, REPLACE(REPLACE(REPLACE(t.mapel, '[', ''), ']', ''), ' ', ''))
        WHERE t.id_user = ?
-       GROUP BY
-         t.id_tutor,
-         t.id_user,
-         u.username,
-         t.nama_tutor,
-         t.tempat_lahir,
-         t.tanggal_lahir,
-         t.jenis_kelamin,
-         t.alamat,
-         t.pendidikan,
-         t.no_hp,
-         t.tanggal_bergabung,
-         t.status,
-         t.mapel
        LIMIT 1`,
       [idUser]
     );
