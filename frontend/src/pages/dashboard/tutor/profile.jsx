@@ -20,6 +20,7 @@ const Profile = () => {
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mapelOptions, setMapelOptions] = useState([]);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [passwordBaru, setPasswordBaru] = useState('');
@@ -29,6 +30,32 @@ const Profile = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(null);
+
+  const getMapelNames = (mapelData) => {
+    if (!mapelData) return '—';
+    let ids;
+    try {
+      ids = typeof mapelData === 'string' ? JSON.parse(mapelData) : mapelData;
+    } catch {
+      ids = [];
+    }
+    if (!Array.isArray(ids)) ids = [];
+    const names = ids
+      .map((id) => {
+        const found = mapelOptions.find((m) => Number(m.id_mapel) === Number(id));
+        return found ? found.nama_mapel : null;
+      })
+      .filter(Boolean);
+    return names.length > 0 ? names.join(', ') : '—';
+  };
+
+  useEffect(() => {
+    api.get('/mapel')
+      .then((res) => {
+        if (res.data?.success) setMapelOptions(res.data.data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const fetchTutor = async () => {
@@ -183,7 +210,7 @@ const Profile = () => {
           </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Mata Pelajaran</span>
-            <span className={styles.infoValue}>{tutor.mapel || '—'}</span>
+            <span className={styles.infoValue}>{getMapelNames(tutor.mapel)}</span>
           </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Status</span>

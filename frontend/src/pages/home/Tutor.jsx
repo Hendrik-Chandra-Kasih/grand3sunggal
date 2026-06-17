@@ -26,6 +26,24 @@ function Tutor() {
   const [selectedMapel, setSelectedMapel] = useState('');
   const [selectedJenjang, setSelectedJenjang] = useState('');
 
+  const getMapelNames = (mapelData) => {
+    if (!mapelData) return '-';
+    let ids;
+    try {
+      ids = typeof mapelData === 'string' ? JSON.parse(mapelData) : mapelData;
+    } catch {
+      ids = [];
+    }
+    if (!Array.isArray(ids)) ids = [];
+    return ids
+      .map((id) => {
+        const found = mapelOptions.find((m) => Number(m.id_mapel) === Number(id));
+        return found ? found.nama_mapel : null;
+      })
+      .filter(Boolean)
+      .join(', ') || '-';
+  };
+
   const fetchTutors = useCallback(async () => {
     setLoading(true);
     try {
@@ -164,7 +182,7 @@ function Tutor() {
             </div>
             <div className={styles.tutorInfo}>
               <h3 className={styles.tutorName}>{tutor.nama_tutor}</h3>
-              <p className={styles.tutorSubject}>{tutor.mapel || '-'}</p>
+              <p className={styles.tutorSubject}>{getMapelNames(tutor.mapel)}</p>
             </div>
           </div>
         ))}

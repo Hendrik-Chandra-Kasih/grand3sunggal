@@ -60,6 +60,8 @@ async function main() {
   console.log('🚀 Start seeding...\n');
 
   const password = await bcrypt.hash('password123', 10);
+  const passwordAdmin = await bcrypt.hash('admin123', 10);
+  const passwordOwner = await bcrypt.hash('owner123', 10);
   const conn = await pool.getConnection();
 
   try {
@@ -94,9 +96,12 @@ async function main() {
       let id = await findUserId(conn, u.username);
       if (!id) {
         id = await nextId(conn, 'users', 'id_user');
+        let pwd = password;
+        if (u.username === 'admin') pwd = passwordAdmin;
+        else if (u.username === 'owner') pwd = passwordOwner;
         await conn.execute(
           'INSERT INTO users (id_user, username, password, role) VALUES (?, ?, ?, ?)',
-          [id, u.username, password, u.role]
+          [id, u.username, pwd, u.role]
         );
       }
       userIdMap[u.username] = id;

@@ -146,6 +146,9 @@ const Jadwal = () => {
                 {formatJam(jadwal.jam)}
                 {jadwal.jam_selesai ? ` - ${formatJam(jadwal.jam_selesai)}` : ''}
               </span>
+              <span className={styles.dayBadge}>
+                {Array.isArray(jadwal.hari) ? jadwal.hari.join(', ') : jadwal.hari}
+              </span>
             </div>
 
             {}
