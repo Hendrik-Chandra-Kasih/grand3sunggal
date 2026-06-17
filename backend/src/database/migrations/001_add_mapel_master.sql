@@ -15,7 +15,7 @@ INSERT INTO mapel (nama_mapel)
 SELECT DISTINCT TRIM(nama_kelas)
 FROM kelas
 WHERE COALESCE(TRIM(nama_kelas), '') <> ''
-ON DUPLICATE KEY UPDATE nama_mapel = VALUES(nama_mapel);
+ON DUPLICATE KEY UPDATE nama_mapel = nama_mapel;
 
 -- 3. Tambah kolom id_mapel di kelas hanya jika belum ada
 SET @db = (SELECT DATABASE());
@@ -33,7 +33,7 @@ DEALLOCATE PREPARE stmt;
 -- 4. Isi relasi id_mapel ke mapel yang sudah ada
 UPDATE kelas k
 INNER JOIN mapel m
-  ON m.nama_mapel = TRIM(k.nama_kelas)
+  ON m.nama_mapel = TRIM(k.nama_kelas) COLLATE utf8mb4_unicode_ci
 SET k.id_mapel = m.id_mapel
 WHERE k.id_mapel IS NULL
   AND COALESCE(TRIM(k.nama_kelas), '') <> '';

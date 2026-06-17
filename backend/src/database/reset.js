@@ -36,6 +36,15 @@ const TABLES_IN_DROP_ORDER = [
 async function main() {
   console.log(`[reset] target database: ${DB_NAME}`);
 
+  // Step 0: Buat database dulu jika belum ada
+  const connInit = await mysql.createConnection(baseConfig);
+  try {
+    await connInit.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\``);
+    console.log(`[reset] database \`${DB_NAME}\` siap.`);
+  } finally {
+    await connInit.end();
+  }
+
   const conn = await mysql.createConnection({
     ...baseConfig,
     database: DB_NAME,
