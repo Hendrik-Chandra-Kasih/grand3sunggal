@@ -107,6 +107,15 @@
   color: #dc2626;
 }
 
+.keuanganBreakdown {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 4px;
+  font-style: italic;
+}
+
 
 .tableWrapper {
   overflow-x: auto;

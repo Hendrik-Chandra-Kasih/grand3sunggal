@@ -558,4 +558,102 @@
     background: transparent !important;
     padding: 0 !important;
   }
+
+  .printHeader {
+    display: flex !important;
+    align-items: center;
+    gap: 16px;
+    padding: 0 0 12px 0;
+  }
+
+  .printDivider,
+  .printTitle {
+    display: block !important;
+  }
+
+  .screenOnly {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 14mm;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  .container {
+    padding: 0 !important;
+  }
+
+  .titleSection,
+  .tableSection,
+  .cardsRow,
+  .grandTotalCard {
+    break-inside: avoid;
+  }
+}
+
+/* Print-Only Header (logo + company info) */
+.printHeader,
+.printDivider,
+.printTitle {
+  display: none;
+}
+
+.printLogo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.printCompanyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.printCompanyName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.printCompanyTagline {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  font-style: italic;
+}
+
+.printDivider {
+  height: 2px;
+  background: #1e3a8a;
+  margin: 0 0 16px 0;
+  border: none;
+}
+
+.printTitle {
+  text-align: center;
+  margin: 0 0 24px 0;
+}
+
+.printTitle h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  text-decoration: underline;
+}
+
+.printTitle p {
+  font-size: 0.875rem;
+  color: #475569;
+  margin: 0;
 }

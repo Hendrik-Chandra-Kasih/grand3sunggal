@@ -7,6 +7,7 @@ import {
   MdAssessment,
   MdLogout,
   MdSettings,
+  MdReceipt,
 } from 'react-icons/md';
 import styles from './OwnerLayout.module.css';
 import logogrand from '../../assets/logogrand.png';
@@ -14,6 +15,7 @@ import logogrand from '../../assets/logogrand.png';
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: MdDashboard, to: '/owner/dashboard' },
   { label: 'Kelola Gaji', icon: MdAttachMoney, to: '/owner/kelola-gaji' },
+  { label: 'Pengeluaran Bimbel', icon: MdReceipt, to: '/owner/pengeluaran-bimbel' },
   { label: 'Laporan Keuangan', icon: MdAssessment, to: '/owner/laporan-keuangan' },
   { label: 'Pengaturan', icon: MdSettings, to: '/owner/pengaturan' },
 ];
@@ -43,6 +45,7 @@ function OwnerLayout({ children }) {
   const getPageTitle = () => {
     if (location.pathname.includes('dashboard')) return 'Dashboard';
     if (location.pathname.includes('kelola-gaji')) return 'Kelola Gaji';
+    if (location.pathname.includes('pengeluaran-bimbel')) return 'Pengeluaran Bimbel';
     if (location.pathname.includes('laporan-keuangan')) return 'Laporan Keuangan';
     if (location.pathname.includes('pengaturan')) return 'Pengaturan';
     return 'Owner';

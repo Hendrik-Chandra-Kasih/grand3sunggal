@@ -5,6 +5,7 @@ import {
   MdPending,
 } from 'react-icons/md';
 import api from '../../../services/api';
+import logoImg from '../../../assets/logogrand.png';
 import styles from './gaji.module.css';
 
 const MONTHS = [
@@ -108,8 +109,18 @@ const Gaji = () => {
 
   return (
     <div className={styles.container}>
+      {/* ─── Print-Only Header (logo + company info) ───── */}
+      <div className={styles.printHeader}>
+        <img src={logoImg} alt="Logo Grand 3 Sunggal" className={styles.printLogo} />
+        <div className={styles.printCompanyInfo}>
+          <h1 className={styles.printCompanyName}>GRAND 3 SUNGGAL</h1>
+          <p className={styles.printCompanyTagline}>Bimbel &amp; Lembaga Pendidikan</p>
+        </div>
+      </div>
+      <div className={styles.printDivider} />
+
       {/* ─── Filter ──────────────────────────────────────── */}
-      <div className={styles.filterBar}>
+      <div className={`${styles.filterBar} ${styles.screenOnly}`}>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Bulan</label>
           <select
@@ -147,14 +158,20 @@ const Gaji = () => {
         </button>
       </div>
 
+      {/* ─── Print-Only Title ───────────────────────────── */}
+      <div className={styles.printTitle}>
+        <h2>SLIP GAJI TUTOR</h2>
+        <p>Periode: {periodeLabel}</p>
+      </div>
+
       {/* ─── Loading ─────────────────────────────────────── */}
       {loading && (
-        <div className={styles.loadingState}>Memuat data gaji...</div>
+        <div className={`${styles.loadingState} ${styles.screenOnly}`}>Memuat data gaji...</div>
       )}
 
       {/* ─── Error ───────────────────────────────────────── */}
       {error && !loading && (
-        <div className={styles.errorAlert}>{error}</div>
+        <div className={`${styles.errorAlert} ${styles.screenOnly}`}>{error}</div>
       )}
 
       {/* ─── Content ─────────────────────────────────────── */}

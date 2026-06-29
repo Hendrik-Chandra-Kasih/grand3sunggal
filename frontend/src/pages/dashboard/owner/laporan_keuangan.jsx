@@ -140,7 +140,8 @@ const LaporanKeuangan = () => {
                 {formatRupiah(rekapData.total_pengeluaran)}
               </span>
               <span className={styles.cardSubtext}>
-                Gaji tutor periode {bulanLabel} {tahun}
+                Gaji tutor: {formatRupiah(rekapData.gaji_tutor_total || 0)}
+                {' + '}Operasional: {formatRupiah(rekapData.pengeluaran_bimbel_total || 0)}
               </span>
             </div>
             <div className={styles.summaryCard}>

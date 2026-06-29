@@ -116,6 +116,11 @@ const OwnerDashboard = () => {
                   <span className={`${styles.keuanganNominal} ${styles.keuanganMerah}`}>
                     {formatRupiah(keuangan.total_pengeluaran)}
                   </span>
+                  <span className={styles.keuanganBreakdown}>
+                    Gaji: {formatRupiah(keuangan.gaji_tutor_total || 0)}
+                    {' + '}
+                    Operasional: {formatRupiah(keuangan.pengeluaran_bimbel_total || 0)}
+                  </span>
                 </div>
               </div>
             ) : (

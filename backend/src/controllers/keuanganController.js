@@ -20,14 +20,23 @@ export const getRekapKeuangan = async (req, res) => {
     const totalPendapatan = Number(pendapatanRow?.total || 0);
 
     const periodeStart = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01 00:00:00`;
-    const pengeluaranRow = await queryOne(
-      `SELECT COALESCE(SUM(total_gaji), 0) AS total
-       FROM gaji_tutor
-       WHERE periode = ?`,
-      [periodeStart]
-    );
-    const totalPengeluaran = Number(pengeluaranRow?.total || 0);
-
+    const [gajiRow, bimbelRow] = await Promise.all([
+      queryOne(
+        `SELECT COALESCE(SUM(total_gaji), 0) AS total
+         FROM gaji_tutor
+         WHERE periode = ?`,
+        [periodeStart]
+      ),
+      queryOne(
+        `SELECT COALESCE(SUM(nominal), 0) AS total
+         FROM pengeluaran_bimbel
+         WHERE MONTH(tanggal_pengeluaran) = ? AND YEAR(tanggal_pengeluaran) = ?`,
+        [targetMonth, targetYear]
+      ),
+    ]);
+    const gajiTotal = Number(gajiRow?.total || 0);
+    const bimbelTotal = Number(bimbelRow?.total || 0);
+    const totalPengeluaran = gajiTotal + bimbelTotal;
     const labaBersih = totalPendapatan - totalPengeluaran;
 
     res.json({
@@ -35,6 +44,9 @@ export const getRekapKeuangan = async (req, res) => {
       data: {
         total_pendapatan: totalPendapatan,
         total_pengeluaran: totalPengeluaran,
+        // Rincian agar frontend bisa menampilkan breakdown
+        gaji_tutor_total: gajiTotal,
+        pengeluaran_bimbel_total: bimbelTotal,
         laba_bersih: labaBersih,
         periode: { bulan: targetMonth, tahun: targetYear },
       },
@@ -53,7 +65,7 @@ export const getTahunanKeuangan = async (req, res) => {
     for (let m = 1; m <= 12; m++) {
       const periodeStart = `${targetYear}-${String(m).padStart(2, '0')}-01 00:00:00`;
 
-      const [pendapatanRow, pengeluaranRow] = await Promise.all([
+      const [pendapatanRow, gajiRow, bimbelRow] = await Promise.all([
         queryOne(
           `SELECT COALESCE(SUM(jumlah), 0) AS total
            FROM pembayaran
@@ -66,12 +78,25 @@ export const getTahunanKeuangan = async (req, res) => {
            WHERE periode = ?`,
           [periodeStart]
         ),
+        queryOne(
+          `SELECT COALESCE(SUM(nominal), 0) AS total
+           FROM pengeluaran_bimbel
+           WHERE MONTH(tanggal_pengeluaran) = ? AND YEAR(tanggal_pengeluaran) = ?`,
+          [m, targetYear]
+        ),
       ]);
+
+      const pendapatan = Number(pendapatanRow?.total || 0);
+      const gajiTotal = Number(gajiRow?.total || 0);
+      const bimbelTotal = Number(bimbelRow?.total || 0);
+      const pengeluaran = gajiTotal + bimbelTotal;
 
       months.push({
         bulan: m,
-        pendapatan: Number(pendapatanRow?.total || 0),
-        pengeluaran: Number(pengeluaranRow?.total || 0),
+        pendapatan,
+        pengeluaran,
+        gaji_tutor_total: gajiTotal,
+        pengeluaran_bimbel_total: bimbelTotal,
       });
     }
 

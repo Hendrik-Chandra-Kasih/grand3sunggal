@@ -35,6 +35,7 @@ import OwnerDashboard from './pages/dashboard/owner/owner_dashboard'
 import KelolaGaji from './pages/dashboard/owner/kelola_gaji'
 import LaporanKeuangan from './pages/dashboard/owner/laporan_keuangan'
 import Pengaturan from './pages/dashboard/owner/pengaturan'
+import PengeluaranBimbel from './pages/dashboard/owner/pengeluaran_bimbel'
 import InfalTutor from './pages/dashboard/admin/infal_tutor'
 import ManajemenMapel from './pages/dashboard/admin/manajemen_mapel'
 import RekapAbsensiSiswaAdmin from './pages/dashboard/admin/rekap_absensi_siswa'
@@ -354,6 +355,16 @@ function App() {
             <ProtectedRoute allowedRoles={['pemilik']}>
               <OwnerLayout>
                 <LaporanKeuangan />
+              </OwnerLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/pengeluaran-bimbel"
+          element={
+            <ProtectedRoute allowedRoles={['pemilik']}>
+              <OwnerLayout>
+                <PengeluaranBimbel />
               </OwnerLayout>
             </ProtectedRoute>
           }
