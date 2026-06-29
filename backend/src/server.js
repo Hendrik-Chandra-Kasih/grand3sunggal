@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 5000
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://yourdomain.com'
+    ? process.env.CORS_ORIGIN || true
     : 'http://localhost:3000',
   credentials: true,
 }))
