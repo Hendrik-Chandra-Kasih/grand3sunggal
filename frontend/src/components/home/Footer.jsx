@@ -20,7 +20,7 @@ function Footer() {
             <div className={styles.contactLabel}>
               <span className={styles.contactIcon}>📍</span> ALAMAT KANTOR
             </div>
-            <div className={styles.contactText}>Jl. Sunggal No. 88, Sunggal, Kec. Medan Sunggal, Kota Medan, Sumatera Utara</div>
+            <div className={styles.contactText}>Jl. Sunggal No. 374, Sunggal, Kec. Medan Sunggal, Kota Medan, Sumatera Utara</div>
           </div>
 
           <div className={styles.contactBlock}>
@@ -28,8 +28,7 @@ function Footer() {
               <span className={styles.contactIcon}>📞</span> HUBUNGI KAMI
             </div>
             <div className={styles.contactText}>
-              0821-2345-6789 (Telp)<br/>
-              0891-8765-4321 (WhatsApp)
+              0831-9076-0178 (Whatsapp)<br/>
             </div>
           </div>
 
