@@ -1,7 +1,12 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { testConnection } from './config/database.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 import healthRoutes from './routes/health.js'
 import authRoutes from './routes/auth.js'
@@ -53,6 +58,17 @@ app.use('/api/settings', settingsRoutes)
 app.use('/api/libur', liburRoutes)
 app.use('/api/pengeluaran-bimbel', pengeluaranBimbelRoutes)
 
+// ─── Serve static files frontend ─────────────────────
+const distPath = path.join(__dirname, '../../frontend/dist')
+app.use(express.static(distPath))
+
+// ─── Catch-all: semua route non-API → index.html ─────
+// (React SPA fallback — biar React Router yang handle)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'))
+})
+
+// ─── 404: hanya untuk route yang tidak dikenal ────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' })
 })
