@@ -10,13 +10,18 @@ const knowledgeBase = [
       'tagihan', 'bulanan', 'nominal', 'berapaan',
     ],
     answer:
-      '💰 *Rata-rata SPP Bimbel Grand 3 Sunggal:*\n\n' +
-      '• SD (Kelas 1–6) Rp 200.000 – Rp 300.000 / bulan\n' +
-      '• SMP (Kelas 7–9) Rp 300.000 – Rp 400.000 / bulan\n' +
-      '• SMA (Kelas 10–12) Rp 400.000 – Rp 500.000 / bulan\n' +
-      '• Program UTBK Rp 500.000 – Rp 600.000 / bulan\n\n' +
-      'Harga bisa berbeda tergantung jumlah mapel yang diambil. ' +
-      'Hubungi admin untuk info lebih lengkap! 📞',
+      'Biaya bimbingan belajar di Grand Tiga Sunggal bervariasi sesuai dengan jenjang pendidikan, dengan biaya mulai dari Rp350.000 per bulan.\n\n' +
+      'Harga bisa berbeda tergantung jumlah mapel yang diambil. Hubungi admin untuk info lebih lengkap! 📞',
+  },
+ {
+    id: 'jadwal',
+    keywords: [
+      'jadwal', 'waktu', 'jam', 'hari', 'tanggal',
+      'schedule', 'time', 'date',
+    ],
+    answer:
+      'Jadwal bimbingan belajar di Grand Tiga Sunggal disesuaikan dengan jenjang pendidikan, dengan jadwal mulai dari Senin hingga Jumat, pukul 10.00 – 18.00 WIB.\n\n' +
+      'Jadwal setiap siswa akan disesuaikan dengan kelas dan program yang diambil. Hubungi admin untuk info lebih lengkap! 📞',
   },
   {
     id: 'jenjang',
@@ -25,107 +30,100 @@ const knowledgeBase = [
       'pendidikan', 'sekolah', 'tk', 'paud',
     ],
     answer:
-      '📚 *Jenjang pendidikan yang tersedia:*\n\n' +
-      '🔹 **SD** — Kelas 1 sampai 6\n' +
-      '🔹 **SMP** — Kelas 7 sampai 9\n' +
-      '🔹 **SMA** — Kelas 10 sampai 12\n' +
-      '🔹 **Program Khusus UTBK / Persiapan PTN**\n\n' +
+      '📚 Jenjang pendidikan yang tersedia:\n\n' +
+      '🔹 SD — Kelas 1 sampai 6\n' +
+      '🔹 SMP — Kelas 7 sampai 9\n' +
+      '🔹 SMA — Kelas 10 sampai 12\n' +
+      '🔹 Program Khusus UTBK / Persiapan PTN\n\n' +
       'Semua jenjang didampingi tutor profesional dan berpengalaman! ✨',
   },
+
   {
     id: 'kelas',
     keywords: [
       'kelas', 'program', 'mapel', 'mata pelajaran', 'pelajaran',
       'les', 'bimbel', 'kursus', 'belajar', 'privat', 'semiprivat',
-      'semi privat', 'kelompok', 'mata pelajaran',
+      'semi privat', 'kelompok',
     ],
     answer:
-      '📖 *Kelas & Program yang tersedia:*\n\n' +
-      '📐 Matematika\n' +
+      '📖 Kelas & Program yang tersedia:\n\n' +
+      '📐 Mafia\n' +
       '📝 Bahasa Inggris\n' +
-      '⚡ Fisika\n' +
-      '🧪 Kimia\n' +
-      '🌿 Biologi\n' +
-      '🌍 IPS Terpadu\n' +
-      '💻 Komputer & Programming\n\n' +
-      'Kami juga menyediakan:\n' +
-      '• **Privat** (1 tutor — 1 siswa)\n' +
-      '• **Semi-privat** (1 tutor — 3–5 siswa)',
+      '⚡ Semua Mata Pelajaran\n\n' +
+      'Setiap tutor mengajar satu kelas yang berisi siswa dengan jenjang dan sekolah yang sama. Informasi lengkap mengenai tutor dapat dilihat pada menu Tutor yang tersedia pada sistem.',
   },
+
   {
     id: 'daftar',
     keywords: [
       'daftar', 'pendaftaran', 'registrasi', 'mendaftar',
-      'syarat', 'enroll', 'registration', 'daftar',
+      'syarat', 'enroll', 'registration',
       'prosedur', 'cara', 'formulir',
     ],
     answer:
-      '📋 *Cara Mendaftar di Bimbel Grand 3 Sunggal:*\n\n' +
+      '📋 Cara Mendaftar di Bimbel Grand 3 Sunggal:\n\n' +
       '1️⃣ Datang langsung ke lokasi bimbel\n' +
       '2️⃣ Mengisi formulir pendaftaran\n' +
-      '3️⃣ Membawa foto 3×4 sebanyak 2 lembar\n' +
-      '4️⃣ Membayar biaya pendaftaran\n\n' +
-      'Atau bisa juga *mendaftar online* melalui website kami.\n\n' +
-      '📞 Info lebih lanjut: **0812-3456-7890**',
+      '3️⃣ Melakukan pembayaran biaya bimbel\n\n' +
+      'Atau bisa juga mendaftar online melalui website kami.\n\n' +
+      '📞 Info lebih lanjut: 0831-9076-0178',
   },
+
   {
     id: 'lokasi',
     keywords: [
       'lokasi', 'alamat', 'dimana', 'tempat', 'letak',
-      'posisi', 'sunggal', 'jalan', 'gedung', 'lokasi',
+      'posisi', 'sunggal', 'jalan', 'gedung',
       'maps', 'google maps',
     ],
     answer:
-      '📍 *Alamat Bimbel Grand 3 Sunggal:*\n\n' +
-      'Jl. Besar Sunggal No. 123, Kec. Sunggal,\n' +
-      'Kab. Deli Serdang, Sumatera Utara 20351\n\n' +
-      '_(Gedung 2 lantai, cat biru, dekat Simpang Pos)_\n\n' +
-      '🕐 *Jam Operasional:*\n' +
-      'Sen–Jum: 14.00 – 20.00 WIB\n' +
-      'Sab: 09.00 – 17.00 WIB\n' +
-      'Min: Libur',
+      '📍 Alamat Bimbel Grand 3 Sunggal:\n\n' +
+      'Jl. Sunggal No. 374, Kec. Sunggal,\n' +
+      'Kota Medan, Sumatera Utara 20128\n\n' +
+      '🕐 Jam Operasional:\n' +
+      'Sen–Jum: 10.00 – 18.00 WIB\n' +
+      'Sab: Libur\n' +
+      'Min: Libur',
   },
+
   {
     id: 'salam',
     keywords: [
-      'hai', 'halo', 'hi', 'helo', 'hey', 'siang', 'pagi',
-      'sore', 'malam', 'assalamualaikum', 'assalamu alaikum',
-      'pagi', 'siang', 'sore',
+      'hai', 'halo', 'hi', 'helo', 'hey',
+      'siang', 'pagi', 'sore', 'malam',
+      'assalamualaikum', 'assalamu alaikum',
     ],
     answer:
-      'Halo! 👋 Selamat datang di **Bimbel Grand 3 Sunggal**.\n' +
-      'Ada yang bisa saya bantu? Silakan tanya:\n\n' +
-      '• 💰 Rata-rata SPP\n' +
-      '• 📚 Jenjang pendidikan\n' +
-      '• 📖 Kelas & program\n' +
-      '• 📋 Cara pendaftaran\n' +
-      '• 📍 Lokasi bimbel',
+      'Halo! 👋 Selamat datang di Bimbel Grand 3 Sunggal.\n\n' +
+      'Ada yang bisa saya bantu? Silakan tanya:\n' +
+      '• Biaya SPP\n' +
+      '• Jenjang pendidikan\n' +
+      '• Kelas & program\n' +
+      '• Cara pendaftaran\n' +
+      '• Lokasi bimbel',
   },
+
   {
     id: 'tutor',
     keywords: [
-      'tutor', 'guru', 'pengajar', 'instruktur', 'tenaga pengajar',
-      'pengalaman', 'kualifikasi', 's1',
+      'tutor', 'guru', 'pengajar', 'instruktur',
+      'tenaga pengajar', 'pengalaman', 'kualifikasi', 's1',
     ],
     answer:
-      '👨‍🏫 Tutor di Bimbel Grand 3 Sunggal berasal dari lulusan S1 dari berbagai universitas ternama.\n\n' +
-      'Mereka berpengalaman dan telah melewati seleksi ketat serta pelatihan mengajar.\n\n' +
-      'Kami juga melakukan evaluasi rutin untuk menjaga kualitas pembelajaran! ✅',
+      '👨‍🏫 Tutor di Bimbel Grand 3 Sunggal berasal dari lulusan S1 dari berbagai universitas ternama. Mereka berpengalaman dan telah melewati proses seleksi serta evaluasi rutin untuk menjaga kualitas pembelajaran.',
   },
+
   {
     id: 'fasilitas',
     keywords: [
-      'fasilitas', 'ruangan', 'ac', 'wifi', 'perpustakaan',
-      'buku', 'belajar', 'nyaman',
+      'fasilitas', 'ruangan', 'ac', 'wifi',
+      'perpustakaan', 'buku', 'belajar', 'nyaman',
     ],
     answer:
-      '🏫 *Fasilitas Bimbel Grand 3 Sunggal:*\n\n' +
+      '🏫 Fasilitas Bimbel Grand 3 Sunggal:\n\n' +
       '• Ruang belajar ber-AC 🌀\n' +
-      '• Wi-Fi gratis 📶\n' +
-      '• Perpustakaan mini 📚\n' +
       '• Ruang diskusi 🪑\n' +
-      '• CCTV keamanan 📹\n' +
-      '• Area parkir luas 🅿️',
+      '• CCTV keamanan 📹\n',
   },
 ];
 
@@ -275,7 +273,7 @@ function ChatButton() {
           <div className={styles.headerLeft}>
             <div className={styles.avatar}>🤖</div>
             <div>
-              <div className={styles.headerTitle}>Chat Bimbel</div>
+              <div className={styles.headerTitle}>Chatbot Grand Tiga Sunggal</div>
               <div className={styles.headerStatus}>Online</div>
             </div>
           </div>

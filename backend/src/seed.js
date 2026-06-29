@@ -126,20 +126,20 @@ async function main() {
     // ══════════════════════════════════════════════════════════
     // 3. Tutor — semua field nullable diisi
     // ══════════════════════════════════════════════════════════
-    const tutorData = [
-      { username: 'budi.setiawan', nama: 'Budi Setiawan', jk: 'L', hp: '081234567001',
-        tempat_lahir: 'Medan', tanggal_lahir: '1990-03-15', alamat: 'Jl. Melati No.12, Medan',
-        pendidikan: 'S1 Pendidikan Matematika', mapel: ['SD', 'SMP'] },
-      { username: 'ani.wijaya', nama: 'Ani Wijaya', jk: 'P', hp: '081234567002',
-        tempat_lahir: 'Jakarta', tanggal_lahir: '1992-07-22', alamat: 'Jl. Mawar No.8, Sunggal',
-        pendidikan: 'S1 Pendidikan Bahasa Inggris', mapel: ['SMA', 'SD'] },
-      { username: 'candra.putra', nama: 'Candra Putra', jk: 'L', hp: '081234567003',
-        tempat_lahir: 'Bandung', tanggal_lahir: '1988-11-05', alamat: 'Jl. Anggrek No.3, Sunggal',
-        pendidikan: 'S1 Matematika', mapel: ['MAFIA'] },
-      { username: 'dewi.lestari', nama: 'Dewi Lestari', jk: 'P', hp: '081234567004',
-        tempat_lahir: 'Surabaya', tanggal_lahir: '1995-01-30', alamat: 'Jl. Dahlia No.15, Sunggal',
-        pendidikan: 'S1 PGSD', mapel: ['Calistung', 'SD'] },
-    ];
+   const tutorData = [
+  { username: 'budi.setiawan', nama: 'Budi Setiawan', nik: '1271051503900001', jk: 'L', hp: '081234567001',
+    tempat_lahir: 'Medan', tanggal_lahir: '1990-03-15', alamat: 'Jl. Melati No.12, Medan',
+    pendidikan: 'S1 Pendidikan Matematika', mapel: ['SD', 'SMP'] },
+  { username: 'ani.wijaya', nama: 'Ani Wijaya', nik: '3174072207920002', jk: 'P', hp: '081234567002',
+    tempat_lahir: 'Jakarta', tanggal_lahir: '1992-07-22', alamat: 'Jl. Mawar No.8, Sunggal',
+    pendidikan: 'S1 Pendidikan Bahasa Inggris', mapel: ['SMA', 'SD'] },
+  { username: 'candra.putra', nama: 'Candra Putra', nik: '3273050511880003', jk: 'L', hp: '081234567003',
+    tempat_lahir: 'Bandung', tanggal_lahir: '1988-11-05', alamat: 'Jl. Anggrek No.3, Sunggal',
+    pendidikan: 'S1 Matematika', mapel: ['MAFIA'] },
+  { username: 'dewi.lestari', nama: 'Dewi Lestari', nik: '3578013001950004', jk: 'P', hp: '081234567004',
+    tempat_lahir: 'Surabaya', tanggal_lahir: '1995-01-30', alamat: 'Jl. Dahlia No.15, Sunggal',
+    pendidikan: 'S1 PGSD', mapel: ['Calistung', 'SD'] },
+];
 
     const tutors = [];
     for (const t of tutorData) {
@@ -149,10 +149,10 @@ async function main() {
         tid = await nextId(conn, 'tutor', 'id_tutor');
         const mapelJson = JSON.stringify(t.mapel.map((n) => mapelIds[n]).filter(Boolean));
         await conn.execute(
-          `INSERT INTO tutor (id_tutor, id_user, nama_tutor, tempat_lahir, tanggal_lahir,
+          `INSERT INTO tutor (id_tutor, id_user, nama_tutor,nik, tempat_lahir, tanggal_lahir,
             jenis_kelamin, alamat, pendidikan, no_hp, tanggal_bergabung, status, mapel)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktif', ?)`,
-          [tid, uid, t.nama, t.tempat_lahir, t.tanggal_lahir,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, 'Aktif', ?)`,
+          [tid, uid, t.nama,t.nik, t.tempat_lahir, t.tanggal_lahir,
             t.jk, t.alamat, t.pendidikan, t.hp, '2024-01-15', mapelJson]
         );
       }
@@ -163,68 +163,79 @@ async function main() {
     // ══════════════════════════════════════════════════════════
     // 4. Siswa — semua field nullable diisi
     // ══════════════════════════════════════════════════════════
-    const siswaData = [
-      { username: 'rizky.pratama', nama: 'Rizky Pratama', jk: 'L',
-        tempat_lahir: 'Medan', tanggal_lahir: '2008-05-10', kelas: '10',
-        asal_sekolah: 'SMA Negeri 1 Medan', alamat: 'Jl. Kenanga No.5, Medan',
-        nama_ortu: 'Sukirman', pekerjaan_ortu: 'PNS', pendidikan_ortu: 'S1',
-        spp: 550000, hp: '081234500001', mapel: ['SMA', 'MAFIA'] },
-      { username: 'siti.aminah', nama: 'Siti Aminah', jk: 'P',
-        tempat_lahir: 'Sunggal', tanggal_lahir: '2014-08-20', kelas: '2 SD',
-        asal_sekolah: 'SD Negeri 1 Sunggal', alamat: 'Jl. Teratai No.3, Sunggal',
-        nama_ortu: 'Suryanto', pekerjaan_ortu: 'Wiraswasta', pendidikan_ortu: 'SMA',
-        spp: 300000, hp: '081234500002', mapel: ['SD', 'Calistung'] },
-      { username: 'andi.saputra', nama: 'Andi Saputra', jk: 'L',
-        tempat_lahir: 'Binjai', tanggal_lahir: '2010-12-03', kelas: '8',
-        asal_sekolah: 'SMP Negeri 2 Binjai', alamat: 'Jl. Flamboyan No.7, Sunggal',
-        nama_ortu: 'Hendro', pekerjaan_ortu: 'Karyawan Swasta', pendidikan_ortu: 'D3',
-        spp: 450000, hp: '081234500003', mapel: ['SMP', 'SD'] },
-      { username: 'aisyah.putri', nama: 'Aisyah Putri', jk: 'P',
-        tempat_lahir: 'Jakarta', tanggal_lahir: '2009-02-14', kelas: '9',
-        asal_sekolah: 'SMP Negeri 5 Sunggal', alamat: 'Jl. Cempaka No.11, Sunggal',
-        nama_ortu: 'Fatimah', pekerjaan_ortu: 'Guru', pendidikan_ortu: 'S1',
-        spp: 400000, hp: '081234500004', mapel: ['SMP'] },
-      { username: 'budi.santoso', nama: 'Budi Santoso', jk: 'L',
-        tempat_lahir: 'Surabaya', tanggal_lahir: '2007-09-18', kelas: '11',
-        asal_sekolah: 'SMA Negeri 3 Medan', alamat: 'Jl. Bougenville No.2, Sunggal',
-        nama_ortu: 'Rahmat', pekerjaan_ortu: 'TNI', pendidikan_ortu: 'S1',
-        spp: 500000, hp: '081234500005', mapel: ['SMA'] },
-      { username: 'citra.dewi', nama: 'Citra Dewi', jk: 'P',
-        tempat_lahir: 'Medan', tanggal_lahir: '2013-11-25', kelas: '3 SD',
-        asal_sekolah: 'SD Negeri 4 Sunggal', alamat: 'Jl. Melati No.20, Sunggal',
-        nama_ortu: 'Indah', pekerjaan_ortu: 'Ibu Rumah Tangga', pendidikan_ortu: 'SMA',
-        spp: 350000, hp: '081234500006', mapel: ['SD'] },
-      { username: 'dimas.ari', nama: 'Dimas Ari', jk: 'L',
-        tempat_lahir: 'Bandung', tanggal_lahir: '2010-06-07', kelas: '8',
-        asal_sekolah: 'SMP Negeri 1 Sunggal', alamat: 'Jl. Sakura No.9, Sunggal',
-        nama_ortu: 'Agus', pekerjaan_ortu: 'Dokter', pendidikan_ortu: 'S2',
-        spp: 450000, hp: '081234500007', mapel: ['SMP', 'MAFIA'] },
-      { username: 'eka.putri', nama: 'Eka Putri', jk: 'P',
-        tempat_lahir: 'Yogyakarta', tanggal_lahir: '2008-01-12', kelas: '10',
-        asal_sekolah: 'SMA Negeri 2 Sunggal', alamat: 'Jl. Asoka No.6, Sunggal',
-        nama_ortu: 'Rini', pekerjaan_ortu: 'Perawat', pendidikan_ortu: 'D3',
-        spp: 500000, hp: '081234500008', mapel: ['SMA', 'SD'] },
-      { username: 'fajar.nugraha', nama: 'Fajar Nugraha', jk: 'L',
-        tempat_lahir: 'Palembang', tanggal_lahir: '2009-07-30', kelas: '9',
-        asal_sekolah: 'SMP Negeri 3 Sunggal', alamat: 'Jl. Tulip No.14, Sunggal',
-        nama_ortu: 'Bambang', pekerjaan_ortu: 'Pengusaha', pendidikan_ortu: 'S1',
-        spp: 400000, hp: '081234500009', mapel: ['SMP'] },
-      { username: 'gita.lestari', nama: 'Gita Lestari', jk: 'P',
-        tempat_lahir: 'Semarang', tanggal_lahir: '2015-04-03', kelas: '1 SD',
-        asal_sekolah: 'SD Negeri 3 Sunggal', alamat: 'Jl. Lili No.18, Sunggal',
-        nama_ortu: 'Dewi', pekerjaan_ortu: 'Apoteker', pendidikan_ortu: 'S1',
-        spp: 350000, hp: '081234500010', mapel: ['SD', 'Calistung'] },
-      { username: 'hendra.wijaya', nama: 'Hendra Wijaya', jk: 'L',
-        tempat_lahir: 'Aceh', tanggal_lahir: '2009-10-22', kelas: '9',
-        asal_sekolah: 'SMP Negeri 4 Sunggal', alamat: 'Jl. Kamboja No.1, Sunggal',
-        nama_ortu: 'Joko', pekerjaan_ortu: 'Petani', pendidikan_ortu: 'SMP',
-        spp: 450000, hp: '081234500011', mapel: ['SMP'] },
-      { username: 'intan.permata', nama: 'Intan Permata', jk: 'P',
-        tempat_lahir: 'Makassar', tanggal_lahir: '2007-12-28', kelas: '11',
-        asal_sekolah: 'SMA Negeri 5 Medan', alamat: 'Jl. Edelweis No.4, Sunggal',
-        nama_ortu: 'Slamet', pekerjaan_ortu: 'Polisi', pendidikan_ortu: 'S1',
-        spp: 500000, hp: '081234500012', mapel: ['SMA', 'MAFIA'] },
-    ];
+   const siswaData = [
+  { username: 'rizky.pratama', nama: 'Rizky Pratama', nis: '0081234501', jk: 'L',
+    tempat_lahir: 'Medan', tanggal_lahir: '2008-05-10', kelas: '10',
+    asal_sekolah: 'SMA Negeri 1 Medan', alamat: 'Jl. Kenanga No.5, Medan',
+    nama_ortu: 'Sukirman', pekerjaan_ortu: 'PNS', pendidikan_ortu: 'S1',
+    spp: 550000, hp: '081234500001', mapel: ['SMA', 'MAFIA'] },
+
+  { username: 'siti.aminah', nama: 'Siti Aminah', nis: '0081234502', jk: 'P',
+    tempat_lahir: 'Sunggal', tanggal_lahir: '2014-08-20', kelas: '2 SD',
+    asal_sekolah: 'SD Negeri 1 Sunggal', alamat: 'Jl. Teratai No.3, Sunggal',
+    nama_ortu: 'Suryanto', pekerjaan_ortu: 'Wiraswasta', pendidikan_ortu: 'SMA',
+    spp: 300000, hp: '081234500002', mapel: ['SD', 'Calistung'] },
+
+  { username: 'andi.saputra', nama: 'Andi Saputra', nis: '0081234503', jk: 'L',
+    tempat_lahir: 'Binjai', tanggal_lahir: '2010-12-03', kelas: '8',
+    asal_sekolah: 'SMP Negeri 2 Binjai', alamat: 'Jl. Flamboyan No.7, Sunggal',
+    nama_ortu: 'Hendro', pekerjaan_ortu: 'Karyawan Swasta', pendidikan_ortu: 'D3',
+    spp: 450000, hp: '081234500003', mapel: ['SMP', 'SD'] },
+
+  { username: 'aisyah.putri', nama: 'Aisyah Putri', nis: '0081234504', jk: 'P',
+    tempat_lahir: 'Jakarta', tanggal_lahir: '2009-02-14', kelas: '9',
+    asal_sekolah: 'SMP Negeri 5 Sunggal', alamat: 'Jl. Cempaka No.11, Sunggal',
+    nama_ortu: 'Fatimah', pekerjaan_ortu: 'Guru', pendidikan_ortu: 'S1',
+    spp: 400000, hp: '081234500004', mapel: ['SMP'] },
+
+  { username: 'budi.santoso', nama: 'Budi Santoso', nis: '0081234505', jk: 'L',
+    tempat_lahir: 'Surabaya', tanggal_lahir: '2007-09-18', kelas: '11',
+    asal_sekolah: 'SMA Negeri 3 Medan', alamat: 'Jl. Bougenville No.2, Sunggal',
+    nama_ortu: 'Rahmat', pekerjaan_ortu: 'TNI', pendidikan_ortu: 'S1',
+    spp: 500000, hp: '081234500005', mapel: ['SMA'] },
+
+  { username: 'citra.dewi', nama: 'Citra Dewi', nis: '0081234506', jk: 'P',
+    tempat_lahir: 'Medan', tanggal_lahir: '2013-11-25', kelas: '3 SD',
+    asal_sekolah: 'SD Negeri 4 Sunggal', alamat: 'Jl. Melati No.20, Sunggal',
+    nama_ortu: 'Indah', pekerjaan_ortu: 'Ibu Rumah Tangga', pendidikan_ortu: 'SMA',
+    spp: 350000, hp: '081234500006', mapel: ['SD'] },
+
+  { username: 'dimas.ari', nama: 'Dimas Ari', nis: '0081234507', jk: 'L',
+    tempat_lahir: 'Bandung', tanggal_lahir: '2010-06-07', kelas: '8',
+    asal_sekolah: 'SMP Negeri 1 Sunggal', alamat: 'Jl. Sakura No.9, Sunggal',
+    nama_ortu: 'Agus', pekerjaan_ortu: 'Dokter', pendidikan_ortu: 'S2',
+    spp: 450000, hp: '081234500007', mapel: ['SMP', 'MAFIA'] },
+
+  { username: 'eka.putri', nama: 'Eka Putri', nis: '0081234508', jk: 'P',
+    tempat_lahir: 'Yogyakarta', tanggal_lahir: '2008-01-12', kelas: '10',
+    asal_sekolah: 'SMA Negeri 2 Sunggal', alamat: 'Jl. Asoka No.6, Sunggal',
+    nama_ortu: 'Rini', pekerjaan_ortu: 'Perawat', pendidikan_ortu: 'D3',
+    spp: 500000, hp: '081234500008', mapel: ['SMA', 'SD'] },
+
+  { username: 'fajar.nugraha', nama: 'Fajar Nugraha', nis: '0081234509', jk: 'L',
+    tempat_lahir: 'Palembang', tanggal_lahir: '2009-07-30', kelas: '9',
+    asal_sekolah: 'SMP Negeri 3 Sunggal', alamat: 'Jl. Tulip No.14, Sunggal',
+    nama_ortu: 'Bambang', pekerjaan_ortu: 'Pengusaha', pendidikan_ortu: 'S1',
+    spp: 400000, hp: '081234500009', mapel: ['SMP'] },
+
+  { username: 'gita.lestari', nama: 'Gita Lestari', nis: '0081234510', jk: 'P',
+    tempat_lahir: 'Semarang', tanggal_lahir: '2015-04-03', kelas: '1 SD',
+    asal_sekolah: 'SD Negeri 3 Sunggal', alamat: 'Jl. Lili No.18, Sunggal',
+    nama_ortu: 'Dewi', pekerjaan_ortu: 'Apoteker', pendidikan_ortu: 'S1',
+    spp: 350000, hp: '081234500010', mapel: ['SD', 'Calistung'] },
+
+  { username: 'hendra.wijaya', nama: 'Hendra Wijaya', nis: '0081234511', jk: 'L',
+    tempat_lahir: 'Aceh', tanggal_lahir: '2009-10-22', kelas: '9',
+    asal_sekolah: 'SMP Negeri 4 Sunggal', alamat: 'Jl. Kamboja No.1, Sunggal',
+    nama_ortu: 'Joko', pekerjaan_ortu: 'Petani', pendidikan_ortu: 'SMP',
+    spp: 450000, hp: '081234500011', mapel: ['SMP'] },
+
+  { username: 'intan.permata', nama: 'Intan Permata', nis: '0081234512', jk: 'P',
+    tempat_lahir: 'Makassar', tanggal_lahir: '2007-12-28', kelas: '11',
+    asal_sekolah: 'SMA Negeri 5 Medan', alamat: 'Jl. Edelweis No.4, Sunggal',
+    nama_ortu: 'Slamet', pekerjaan_ortu: 'Polisi', pendidikan_ortu: 'S1',
+    spp: 500000, hp: '081234500012', mapel: ['SMA', 'MAFIA'] },
+];
 
     const siswa = [];
     for (const s of siswaData) {
@@ -234,11 +245,11 @@ async function main() {
         sid = await nextId(conn, 'siswa', 'id_siswa');
         const mapelJson = JSON.stringify(s.mapel.map((n) => mapelIds[n]).filter(Boolean));
         await conn.execute(
-          `INSERT INTO siswa (id_siswa, id_user, nama, tempat_lahir, tanggal_lahir,
+          `INSERT INTO siswa (id_siswa, id_user, nama,nis, tempat_lahir, tanggal_lahir,
             jenis_kelamin, kelas, mapel, asal_sekolah, alamat, tanggal_masuk,
             nama_ortu, pekerjaan_ortu, no_hp_ortu, pendidikan_ortu, spp, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktif')`,
-          [sid, uid, s.nama, s.tempat_lahir, s.tanggal_lahir,
+           VALUES (?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktif')`,
+          [sid, uid, s.nama, s.nis, s.tempat_lahir, s.tanggal_lahir,
             s.jk, s.kelas, mapelJson, s.asal_sekolah, s.alamat, '2024-08-01',
             s.nama_ortu, s.pekerjaan_ortu, s.hp, s.pendidikan_ortu, s.spp]
         );
@@ -457,27 +468,27 @@ async function main() {
     // ══════════════════════════════════════════════════════════
     // 11. Gaji_tutor
     // ══════════════════════════════════════════════════════════
-    const periodeDt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01 00:00:00`;
-    for (const t of tutors) {
-      const [dup] = await conn.execute(
-        'SELECT id_gaji FROM gaji_tutor WHERE id_tutor = ? AND periode = ? LIMIT 1',
-        [t.id_tutor, periodeDt]
-      );
-      if (dup.length > 0) continue;
+    // const periodeDt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01 00:00:00`;
+    // for (const t of tutors) {
+    //   const [dup] = await conn.execute(
+    //     'SELECT id_gaji FROM gaji_tutor WHERE id_tutor = ? AND periode = ? LIMIT 1',
+    //     [t.id_tutor, periodeDt]
+    //   );
+    //   if (dup.length > 0) continue;
 
-      const gid = await nextId(conn, 'gaji_tutor', 'id_gaji');
-      const pemasukan = Math.floor(Math.random() * 1000000) + 500000;
-      const potongan = Math.floor(pemasukan * 0.1);
-      const bonus = Math.floor(Math.random() * 150000);
-      const total = pemasukan - potongan + bonus;
-      await conn.execute(
-        `INSERT INTO gaji_tutor (id_gaji, id_tutor, periode, total_pemasukan, potongan,
-          bonus, total_infal, total_gaji, status_gaji)
-         VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'Draft')`,
-        [gid, t.id_tutor, periodeDt, pemasukan, potongan, bonus, total]
-      );
-    }
-    console.log(`✔ gaji_tutor: ${tutors.length}`);
+    //   const gid = await nextId(conn, 'gaji_tutor', 'id_gaji');
+    //   const pemasukan = Math.floor(Math.random() * 1000000) + 500000;
+    //   const potongan = Math.floor(pemasukan * 0.1);
+    //   const bonus = Math.floor(Math.random() * 150000);
+    //   const total = pemasukan - potongan + bonus;
+    //   await conn.execute(
+    //     `INSERT INTO gaji_tutor (id_gaji, id_tutor, periode, total_pemasukan, potongan,
+    //       bonus, total_infal, total_gaji, status_gaji)
+    //      VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'Draft')`,
+    //     [gid, t.id_tutor, periodeDt, pemasukan, potongan, bonus, total]
+    //   );
+    // }
+    // console.log(`✔ gaji_tutor: ${tutors.length}`);
 
     // ══════════════════════════════════════════════════════════
     // 12. App_settings

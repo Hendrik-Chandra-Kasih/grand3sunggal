@@ -1,9 +1,11 @@
 -- ============================================================
--- Migration 006: Add infal_tutor table, app_settings, 
+-- Migration 006: Add infal_tutor table, app_settings,
 --                and new columns for gaji_tutor
+-- All ALTER TABLE statements are idempotent — safe to re-run.
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
+SET @db = (SELECT DATABASE());
 
 -- ------------------------------------------------------------
 -- 1. Tabel infal_tutor — mencatat tutor pengganti (infal)
@@ -38,14 +40,30 @@ CREATE TABLE IF NOT EXISTS app_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
--- 3. Tambah kolom baru di gaji_tutor
+-- 3. Tambah kolom baru di gaji_tutor (idempotent)
 -- ------------------------------------------------------------
-ALTER TABLE gaji_tutor
-  ADD COLUMN total_infal    BIGINT DEFAULT 0 AFTER bonus,
-  ADD COLUMN status_gaji    ENUM('Draft','Dikonfirmasi','Dibayar') DEFAULT 'Draft' AFTER total_gaji;
+-- total_infal
+SET @col_infal = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'gaji_tutor' AND COLUMN_NAME = 'total_infal');
+SET @sql_infal = IF(@col_infal = 0,
+  'ALTER TABLE gaji_tutor ADD COLUMN total_infal BIGINT DEFAULT 0 AFTER bonus',
+  'SELECT 1');
+PREPARE stmt FROM @sql_infal;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- status_gaji
+SET @col_status = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'gaji_tutor' AND COLUMN_NAME = 'status_gaji');
+SET @sql_status = IF(@col_status = 0,
+  "ALTER TABLE gaji_tutor ADD COLUMN status_gaji ENUM('Draft','Dikonfirmasi','Dibayar') DEFAULT 'Draft' AFTER total_gaji",
+  'SELECT 1');
+PREPARE stmt FROM @sql_status;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ------------------------------------------------------------
--- 4. Seed data awal untuk app_settings
+-- 4. Seed data awal untuk app_settings (ON DUPLICATE KEY = idempotent)
 -- ------------------------------------------------------------
 INSERT INTO app_settings (setting_key, setting_value, description) VALUES
 ('bonus_kehadiran_enabled',   'true',   'Aktifkan/nonaktifkan bonus kehadiran tutor'),
