@@ -18,7 +18,7 @@ import {
   MdClass,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_siswa.module.css';
@@ -363,11 +363,11 @@ const ManajemenSiswa = () => {
       kelas: s.kelas || '',
       asal_sekolah: s.asal_sekolah || '',
       status: s.status || '',
-      no_hp: s.no_hp || '',
+      no_hp: s.no_hp_ortu || '',
       spp: s.spp || 0,
       tanggal_masuk: s.tanggal_masuk ? new Date(s.tanggal_masuk).toLocaleDateString('id-ID') : '',
     }));
-    exportToExcel(rows, columns, 'Manajemen_Siswa');
+    exportToExcelWithHeader(rows, columns, 'Manajemen_Siswa', 'Laporan Manajemen Siswa');
   };
 
   return (

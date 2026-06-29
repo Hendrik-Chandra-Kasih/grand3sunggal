@@ -69,6 +69,22 @@
   margin: 4px 0 0 0;
 }
 
+.pageMetaDate {
+  font-size: 0.813rem;
+  color: #1e293b;
+  margin: 6px 0 0 0;
+  padding: 4px 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.pageMetaDate strong {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
 
 .errorAlert,
 .successAlert {

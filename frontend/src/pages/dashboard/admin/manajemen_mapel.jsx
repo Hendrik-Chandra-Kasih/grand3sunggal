@@ -10,7 +10,7 @@ import {
   MdBook,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_mapel.module.css';
@@ -58,7 +58,7 @@ const ManajemenMapel = () => {
       { header: 'Nama Mata Pelajaran', key: 'nama_mapel' },
     ];
     const data = filteredMapel.map((m, i) => ({ no: i + 1, nama_mapel: m.nama_mapel }));
-    exportToExcel(data, columns, 'Manajemen_Mapel');
+    exportToExcelWithHeader(data, columns, 'Manajemen_Mapel', 'Laporan Manajemen Mata Pelajaran');
   };
 
   const openAddModal = () => {

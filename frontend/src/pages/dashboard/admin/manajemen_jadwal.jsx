@@ -10,7 +10,7 @@ import {
   MdChevronRight,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_jadwal.module.css';
@@ -357,7 +357,7 @@ const ManajemenJadwal = () => {
       mapel: s.nama_mapel || '',
       tutor: s.nama_tutor || '',
     }));
-    exportToExcel(rows, columns, 'Manajemen_Jadwal');
+    exportToExcelWithHeader(rows, columns, 'Manajemen_Jadwal', 'Laporan Manajemen Jadwal');
   };
 
   return (

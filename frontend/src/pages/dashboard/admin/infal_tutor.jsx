@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MdDelete, MdEdit, MdClose, MdFileDownload } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './infal_tutor.module.css';

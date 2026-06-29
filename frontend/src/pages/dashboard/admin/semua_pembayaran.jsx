@@ -10,7 +10,7 @@ import {
   MdClose,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './semua_pembayaran.module.css';
@@ -52,11 +52,29 @@ const statusIcon = (status) => {
   return <MdHourglassEmpty />;
 };
 
+const MONTH_OPTIONS = [
+  { value: '', label: 'Semua Bulan' },
+  { value: '1', label: 'Januari' },
+  { value: '2', label: 'Februari' },
+  { value: '3', label: 'Maret' },
+  { value: '4', label: 'April' },
+  { value: '5', label: 'Mei' },
+  { value: '6', label: 'Juni' },
+  { value: '7', label: 'Juli' },
+  { value: '8', label: 'Agustus' },
+  { value: '9', label: 'September' },
+  { value: '10', label: 'Oktober' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'Desember' },
+];
+
 const SemuaPembayaran = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterMonth, setFilterMonth] = useState(''); // '' = semua bulan
+  const [filterYear, setFilterYear] = useState(''); // '' = semua tahun
   const [detailItem, setDetailItem] = useState(null);
 
   const fetchData = useCallback(async () => {
@@ -79,14 +97,36 @@ const SemuaPembayaran = () => {
     fetchData();
   }, [fetchData]);
 
+  // Daftar tahun (5 tahun ke belakang dari tahun sekarang)
+  const currentYear = new Date().getFullYear();
+  const YEAR_OPTIONS = useMemo(() => {
+    const opts = [{ value: '', label: 'Semua Tahun' }];
+    for (let y = currentYear; y >= currentYear - 5; y--) {
+      opts.push({ value: String(y), label: String(y) });
+    }
+    return opts;
+  }, [currentYear]);
+
+  // Data yang sudah difilter berdasarkan bulan & tahun dari tanggal_bayar
+  const filteredData = useMemo(() => {
+    return data.filter((d) => {
+      if (!d.tanggal_bayar) return false;
+      const dt = new Date(d.tanggal_bayar);
+      if (Number.isNaN(dt.getTime())) return false;
+      if (filterMonth && dt.getMonth() + 1 !== Number(filterMonth)) return false;
+      if (filterYear && dt.getFullYear() !== Number(filterYear)) return false;
+      return true;
+    });
+  }, [data, filterMonth, filterYear]);
+
   const stats = useMemo(() => {
-    const total = data.length;
-    const verified = data.filter((d) => d.status === 'Verified').length;
-    const pending = data.filter((d) => d.status === 'Pending').length;
-    const rejected = data.filter((d) => d.status === 'Rejected').length;
-    const totalJumlah = data.reduce((sum, d) => sum + Number(d.jumlah || 0), 0);
+    const total = filteredData.length;
+    const verified = filteredData.filter((d) => d.status === 'Verified').length;
+    const pending = filteredData.filter((d) => d.status === 'Pending').length;
+    const rejected = filteredData.filter((d) => d.status === 'Rejected').length;
+    const totalJumlah = filteredData.reduce((sum, d) => sum + Number(d.jumlah || 0), 0);
     return { total, verified, pending, rejected, totalJumlah };
-  }, [data]);
+  }, [filteredData]);
 
   const handleExport = () => {
     const columns = [
@@ -102,7 +142,7 @@ const SemuaPembayaran = () => {
       { header: 'Status', key: 'status' },
       { header: 'Catatan', key: 'catatan' },
     ];
-    const rows = data.map((d, i) => ({
+    const rows = filteredData.map((d, i) => ({
       no: i + 1,
       id_pembayaran: `#${d.id_pembayaran}`,
       nama_siswa: d.nama_siswa || '',
@@ -115,7 +155,18 @@ const SemuaPembayaran = () => {
       status: d.status || '',
       catatan: d.catatan || '',
     }));
-    exportToExcel(rows, columns, 'Semua_Pembayaran');
+
+    // Tentukan judul dan nama file berdasarkan filter
+    const monthLabel = filterMonth
+      ? MONTH_OPTIONS.find((m) => m.value === filterMonth)?.label
+      : 'Semua Bulan';
+    const yearLabel = filterYear
+      ? filterYear
+      : 'Semua Tahun';
+    const filename = `Semua_Pembayaran_${monthLabel}_${yearLabel}`.replace(/\s+/g, '_');
+    const reportTitle = `Laporan Semua Pembayaran - ${monthLabel} ${yearLabel}`;
+
+    exportToExcelWithHeader(rows, columns, filename, reportTitle);
   };
 
   return (
@@ -169,17 +220,28 @@ const SemuaPembayaran = () => {
             className={styles.searchInput}
           />
         </div>
-        {/* <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+        <select
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
           className={styles.select}
         >
-          {STATUS_OPTIONS.map((o) => (
+          {MONTH_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
-        </select> */}
+        </select>
+        <select
+          value={filterYear}
+          onChange={(e) => setFilterYear(e.target.value)}
+          className={styles.select}
+        >
+          {YEAR_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -207,14 +269,16 @@ const SemuaPembayaran = () => {
                     Memuat data...
                   </td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <tr>
                   <td colSpan={10} className={styles.tableEmpty}>
-                    Tidak ada data pembayaran.
+                    {filterMonth || filterYear
+                      ? `Tidak ada data pembayaran untuk ${MONTH_OPTIONS.find((m) => m.value === filterMonth)?.label || ''} ${filterYear || ''}.`
+                      : 'Tidak ada data pembayaran.'}
                   </td>
                 </tr>
               ) : (
-                data.map((item, index) => (
+                filteredData.map((item, index) => (
                   <tr key={item.id_pembayaran}>
                     <td className={styles.centerCell}>{index + 1}</td>
                     <td className={styles.idCell}>#{item.id_pembayaran}</td>

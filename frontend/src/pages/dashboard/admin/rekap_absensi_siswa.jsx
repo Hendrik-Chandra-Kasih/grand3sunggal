@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MdFileDownload } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import { useLibur } from '../../../hooks/useLibur';
@@ -77,7 +77,7 @@ const RekapAbsensiSiswa = () => {
       hadir: d.hadir || 0,
       alpha: d.alpha || 0,
     }));
-    exportToExcel(rows, columns, `Rekap_Absensi_Siswa_${bulan}_${tahun}`);
+    exportToExcelWithHeader(rows, columns, `Rekap_Absensi_Siswa_${bulan}_${tahun}`, `Rekap Absensi Siswa Bulan ${selectedMonthLabel} Tahun ${tahun}`);
   };
 
   return (

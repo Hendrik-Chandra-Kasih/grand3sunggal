@@ -89,6 +89,7 @@ const JadwalMengajar = () => {
         hari: jadwal.hari,
         jam: jadwal.jam,
         jam_selesai: jadwal.jam_selesai,
+        tanggal: selectedDate, // tanggal dari filter, bukan tanggal hari ini
       },
     });
   };

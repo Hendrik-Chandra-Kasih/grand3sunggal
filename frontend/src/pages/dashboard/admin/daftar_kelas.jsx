@@ -14,7 +14,7 @@ import {
   MdGroup,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './daftar_kelas.module.css';
@@ -242,7 +242,7 @@ const DaftarKelas = () => {
       mapel: k.nama_mapel || '',
       jumlah_siswa: k.jumlah_siswa || 0,
     }));
-    exportToExcel(rows, columns, 'Daftar_Kelas');
+    exportToExcelWithHeader(rows, columns, 'Daftar_Kelas', 'Laporan Daftar Kelas');
   };
 
   return (

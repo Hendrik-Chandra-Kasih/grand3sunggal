@@ -15,7 +15,7 @@ import {
   MdChevronRight,
   MdFileDownload,
 } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportExcel';
+import { exportToExcelWithHeader } from '../../../utils/exportExcel';
 import api from '../../../services/api';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import styles from './manajemen_tutor.module.css';
@@ -299,7 +299,7 @@ const ManajemenTutor = () => {
       { header: 'Mapel', key: 'mapel' },
       { header: 'Status', key: 'status' },
     ];
-    const rows = filteredTutors.map((t, i) => ({
+    const rows = filteredTutor.map((t, i) => ({
       no: i + 1,
       nama: t.nama_tutor || '',
       no_hp: t.no_hp || '',
@@ -307,7 +307,7 @@ const ManajemenTutor = () => {
       mapel: t.nama_mapel || '',
       status: t.status || '',
     }));
-    exportToExcel(rows, columns, 'Manajemen_Tutor');
+    exportToExcelWithHeader(rows, columns, 'Manajemen_Tutor', 'Laporan Manajemen Tutor');
   };
 
   return (

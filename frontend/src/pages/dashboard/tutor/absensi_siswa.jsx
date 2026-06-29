@@ -12,10 +12,32 @@ import styles from './absensi_siswa.module.css';
 
 const STATUS_OPTIONS = ['Hadir', 'Tidak Hadir'];
 
+const formatTanggalId = (isoDate) => {
+  if (!isoDate) return '-';
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  const bulan = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+  return `${d} ${bulan[m - 1]} ${y}`;
+};
+
 const AbsensiSiswa = () => {
   const { id_jadwal } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Tanggal diambil dari filter jadwal mengajar (location.state.tanggal),
+  // fallback ke tanggal hari ini jika tidak ada
+  const initialTanggal = (() => {
+    if (location.state?.tanggal) return location.state.tanggal;
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  })();
 
   const [jadwal, setJadwal] = useState(null);
   const [siswaList, setSiswaList] = useState([]);
@@ -26,6 +48,7 @@ const AbsensiSiswa = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [tanggal, setTanggal] = useState(initialTanggal);
 
   const fetchJadwal = useCallback(async () => {
     if (location.state) {
@@ -61,9 +84,8 @@ const AbsensiSiswa = () => {
         const siswa = siswaRes.data?.data || [];
         setSiswaList(siswa);
 
-        const today = new Date().toISOString().split('T')[0];
         const absensiRes = await api.get(
-          `/absensi-siswa?id_jadwal=${id_jadwal}&tanggal=${today}`
+          `/absensi-siswa?id_jadwal=${id_jadwal}&tanggal=${tanggal}`
         );
         const absensiData = absensiRes.data?.data || [];
 
@@ -83,7 +105,7 @@ const AbsensiSiswa = () => {
     };
 
     loadData();
-  }, [id_jadwal, fetchJadwal]);
+  }, [id_jadwal, fetchJadwal, tanggal]);
 
   useEffect(() => {
     const keys = new Set([...Object.keys(statusMap), ...Object.keys(savedMap)]);
@@ -125,8 +147,6 @@ const AbsensiSiswa = () => {
   };
 
   const handleSave = async () => {
-    const today = new Date().toISOString().split('T')[0];
-
     const items = Object.entries(statusMap)
       .filter(([, status]) => status)
       .map(([idSiswa, status]) => ({
@@ -147,7 +167,7 @@ const AbsensiSiswa = () => {
 
       const res = await api.post('/absensi-siswa/bulk', {
         id_jadwal: parseInt(id_jadwal, 10),
-        tanggal: today,
+        tanggal, // gunakan tanggal dari filter jadwal mengajar, bukan tanggal hari ini
         items,
       });
 
@@ -193,6 +213,9 @@ const AbsensiSiswa = () => {
               {Array.isArray(jadwal.hari) ? jadwal.hari.join(', ') : jadwal.hari}, {formatJam(jadwal.jam)}
             </p>
           )}
+          <p className={styles.pageMetaDate}>
+            Tanggal Absensi: <strong>{formatTanggalId(tanggal)}</strong>
+          </p>
         </div>
       </div>
 
