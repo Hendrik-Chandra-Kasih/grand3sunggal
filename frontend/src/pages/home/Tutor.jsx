@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import styles from './Tutor.module.css';
+import API_BASE_URL from '../../config.js';
 
 const SearchIcon = ({ size = 20 }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +53,7 @@ function Tutor() {
       if (selectedMapel) params.id_mapel = selectedMapel;
       if (selectedJenjang) params.jenjang = selectedJenjang;
 
-      const response = await axios.get('http://localhost:5000/api/guru', { params });
+      const response = await axios.get(`${API_BASE_URL}/api/guru`, { params });
       if (response.data?.success) {
         setTutors(response.data.data);
       }
@@ -70,7 +71,7 @@ function Tutor() {
   useEffect(() => {
     const fetchMapel = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/mapel');
+        const response = await axios.get(`${API_BASE_URL}/api/mapel`);
         if (response.data?.success) {
           setMapelOptions(response.data.data);
         }
@@ -84,7 +85,7 @@ function Tutor() {
   useEffect(() => {
     const fetchJenjang = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/kelas/jenjang');
+        const response = await axios.get(`${API_BASE_URL}/api/kelas/jenjang`);
         if (response.data?.success) {
           setJenjangOptions(response.data.data);
         }

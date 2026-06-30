@@ -4,6 +4,7 @@ import axios from 'axios';
 import styles from './Login.module.css';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import logogrand from '../../assets/logogrand.png';
+import API_BASE_URL from '../../config.js';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -18,7 +19,7 @@ const Login = () => {
     setError(''); // Clear previous errors
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         username,
         password,
         rememberMe,
