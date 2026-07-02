@@ -494,6 +494,7 @@ async function main() {
     // 12. App_settings
     // ══════════════════════════════════════════════════════════
     const settingsData = [
+      ['biaya_pendaftaran', '150000', 'Biaya pendaftaran siswa baru'],
       ['bonus_kehadiran_enabled', 'true', 'Aktifkan bonus kehadiran'],
       ['bonus_kehadiran_nominal', '65000', 'Nominal bonus kehadiran per bulan'],
       ['bonus_kehadiran_maks_absen', '2', 'Maks absen agar tetap dapat bonus'],

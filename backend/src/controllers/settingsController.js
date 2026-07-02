@@ -89,6 +89,7 @@ export const updateSettings = async (req, res) => {
     }
 
     const validKeys = [
+      'biaya_pendaftaran',
       'bonus_kehadiran_enabled',
       'bonus_kehadiran_nominal',
       'bonus_kehadiran_maks_absen',

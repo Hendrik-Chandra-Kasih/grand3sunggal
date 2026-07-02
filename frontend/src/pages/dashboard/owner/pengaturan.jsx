@@ -3,6 +3,11 @@ import api from '../../../services/api';
 import styles from './pengaturan.module.css';
 
 const SETTINGS_META = {
+  biaya_pendaftaran: {
+  label: 'Biaya Pendaftaran',
+  description: 'Biaya awal pendaftaran siswa baru (Rp)',
+  type: 'number'
+},
   bonus_kehadiran_nominal: { label: 'Nominal Bonus Kehadiran', description: 'Nominal bonus per tutor per bulan (Rp) — Owner pilih manual siapa yang dapat', type: 'number' },
   infal_nominal: { label: 'Nominal Infal', description: 'Nominal per infal (Rp)', type: 'number' },
   persentase_gaji_tutor: { label: 'Persentase Gaji Tutor', description: 'Persentase gaji tutor dari total SPP (%)', type: 'number' },

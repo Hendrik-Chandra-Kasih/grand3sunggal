@@ -12,7 +12,7 @@ const knowledgeBase = [
     ],
     answer:
       'Biaya bimbingan belajar di Grand Tiga Sunggal bervariasi sesuai dengan jenjang pendidikan, dengan biaya mulai dari Rp350.000 per bulan.\n\n' +
-      'Harga bisa berbeda tergantung jumlah mapel yang diambil. Hubungi admin untuk info lebih lengkap! 📞',
+      'Harga bisa berbeda tergantung jumlah mapel yang diambil. Hubungi admin untuk info lebih lengkap! 0831-9076-0178',
   },
  {
     id: 'jadwal',
@@ -22,7 +22,7 @@ const knowledgeBase = [
     ],
     answer:
       'Jadwal bimbingan belajar di Grand Tiga Sunggal disesuaikan dengan jenjang pendidikan, dengan jadwal mulai dari Senin hingga Jumat, pukul 10.00 – 18.00 WIB.\n\n' +
-      'Jadwal setiap siswa akan disesuaikan dengan kelas dan program yang diambil. Hubungi admin untuk info lebih lengkap! 📞',
+      'Jadwal setiap siswa akan disesuaikan dengan kelas dan program yang diambil. Hubungi admin untuk info lebih lengkap! 0831-9076-0178',
   },
   {
     id: 'jenjang',

@@ -86,7 +86,7 @@ const parseNumericInput = (value) => {
   return Number(String(value).replace(/\./g, '')) || 0;
 };
 
-const BIAYA_PENDAFTARAN = 150000;
+
 
 const slugify = (value) =>
   String(value || '')
@@ -168,6 +168,10 @@ const PendaftaranSiswa = () => {
   const [mapelOptions, setMapelOptions] = useState([]);
   const [kelasOptions, setKelasOptions] = useState([]);
   const [selectedKelas, setSelectedKelas] = useState([]);
+  const [settings,setsettings] = useState({});
+  const biayaPendaftaran = useMemo(() => {
+  return Number(settings?.biaya_pendaftaran?.value || 0);
+}, [settings]);
 
   const fetchMapelOptions = useCallback(async () => {
     try {
@@ -190,11 +194,23 @@ const PendaftaranSiswa = () => {
       setKelasOptions([]);
     }
   }, []);
+  
+  const fetchSettings = useCallback(async () => {
+  try {
+    const res = await api.get('/settings');
+    if (res.data?.success) {
+      setsettings(res.data.data);
+    }
+  } catch (err) {
+    console.error('Gagal fetch settings:', err);
+  }
+}, []);
 
   useEffect(() => {
     fetchMapelOptions();
     fetchKelasOptions();
-  }, [fetchMapelOptions, fetchKelasOptions]);
+    fetchSettings();
+  }, [fetchMapelOptions, fetchKelasOptions, fetchSettings]);
 
   const filteredKelas = useMemo(() => {
     if (formData.jenisProgram.length === 0) return [];
@@ -205,8 +221,8 @@ const PendaftaranSiswa = () => {
     const spp = parseNumericInput(biaya.sppBulanan);
     const modul = parseNumericInput(biaya.modulBuku);
     const diskon = parseNumericInput(biaya.diskonPromo);
-    return BIAYA_PENDAFTARAN + spp + modul - diskon;
-  }, [biaya]);
+    return biayaPendaftaran + spp + modul - diskon;
+  }, [biaya, settings]);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -312,7 +328,7 @@ const PendaftaranSiswa = () => {
     const sppNumeric = parseNumericInput(biaya.sppBulanan);
     const modulNumeric = parseNumericInput(biaya.modulBuku);
     const diskonNumeric = parseNumericInput(biaya.diskonPromo);
-    const totalTagihanLocal = BIAYA_PENDAFTARAN + sppNumeric + modulNumeric - diskonNumeric;
+    const totalTagihanLocal = biayaPendaftaran + sppNumeric + modulNumeric - diskonNumeric;
 
     try {
       let userResponse;
@@ -881,7 +897,7 @@ const PendaftaranSiswa = () => {
                   <div className={styles.summaryRow}>
                     <span className={styles.summaryLabel}>Pendaftaran</span>
                     <span className={styles.summaryFixed}>
-                      {formatRupiah(BIAYA_PENDAFTARAN)}
+                      {formatRupiah(biayaPendaftaran)}
                     </span>
                   </div>
 
