@@ -1,0 +1,181 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #1e293b;
+}
+
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: .813rem;
+  font-weight: 500;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.tab:hover {
+  border-color: #1e40af;
+  color: #1e40af;
+}
+.tabActive {
+  background: #1e40af;
+  color: #fff;
+  border-color: #1e40af;
+}
+.tabActive:hover {
+  color: #fff;
+}
+
+.countBadge {
+  padding: 4px 12px;
+  font-size: .75rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.05);
+  overflow: hidden;
+  transition: box-shadow .15s, transform .15s;
+}
+.card:hover {
+  box-shadow: 0 6px 12px -2px rgba(0,0,0,.08);
+}
+
+
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+
+.clockGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .813rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.dayBadge {
+  font-size: .75rem;
+  font-weight: 500;
+  color: #475569;
+  padding: 2px 10px;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.clockIcon {
+  font-size: 1rem;
+  color: #3b82f6;
+}
+
+.sesiBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: .688rem;
+  font-weight: 600;
+  color: #6b21a8;
+  background: #f3e8ff;
+  border-radius: 999px;
+}
+
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cardHeaderIcon {
+  font-size: 1.125rem;
+  color: #ea580c;
+}
+
+.cardMapel {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+
+.cardBody {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardInfoIcon {
+  font-size: 1rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.cardInfoLabel {
+  font-size: .75rem;
+  color: #94a3b8;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.cardInfoValue {
+  font-size: .875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+
+.loadingState,
+.errorState,
+.emptyState {
+  padding: 48px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: .938rem;
+}
